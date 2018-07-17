@@ -5,11 +5,15 @@ NVIDIA drivers here: http://www.nvidia.co.uk/Download/index.aspx?lang=en-uk
 
 # python version
 
-To install: python3 setup.py
+To install:
+
+pip3 install -r requirements.txt
+
+python3 setup.py
 
 This will fetch about 30Gb of dictionaries
 
-To run- various cases:
+To run - various cases:
 
 Bog standard crack:
 python3 empiricist.py -i <input file>
@@ -51,4 +55,6 @@ See also crackstation dictionaries - https://crackstation.net/
 
 Thanks to https://github.com/berzerk0 for some wordlists - these are CC licensed. See:  https://github.com/berzerk0/Probable-Wordlists/tree/master/Real-Passwords
 
-Other wordlists used are openwall_all.txt from Solar Designer, a crack of 275mil of Troy Hunt's hashes, and breachcompilation.txt - origin unknown. (Have merged the last two.)
+Other wordlists used are openwall_all.txt from Solar Designer, a crack of 275mil of Troy Hunt's hashes (mine), and breachcompilation.txt - origin unknown. (Have merged the last two.)
+
+Includes https://www.7-zip.org/ code - which is LGPL. Thanks all! 
