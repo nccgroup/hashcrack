@@ -751,7 +751,7 @@ def main():
             
             (dict,rules,inc)=selectparams( hashtype, nuke )
             
-            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke )
+            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show)  
 
         # ifm - ntsdutil zipped output
         if stype=='ifm':

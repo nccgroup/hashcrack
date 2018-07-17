@@ -47,12 +47,12 @@ def main():
     btexec('7z x hashcat-4.1.0.7z')
 
     print("Getting JksPrivkPrepare.jar - for Java keystores")
-    if not is_non_zero_file('impacket_0_9_15.zip'):
-        urllib.request.urlretrieve ("https://github.com/floyd-fuh/JKS-private-key-cracker-hashcat/raw/master/JksPrivkPrepare.jar","JksPrivkPrepare.jar")
+    if not is_non_zero_file('JksPrivkPrepare.jar'):
+        urllib.request.urlretrieve("https://github.com/floyd-fuh/JKS-private-key-cracker-hashcat/raw/master/JksPrivkPrepare.jar","JksPrivkPrepare.jar")
 
     print("Getting impacket-0.9.15 - might need to get a different one to match the pip install of impacket")
     if not is_non_zero_file('impacket_0_9_15.zip'):
-        urllib.request.urlretrieve ("https://github.com/CoreSecurity/impacket/archive/impacket_0_9_15.zip","impacket_0_9_15.zip")
+        urllib.request.urlretrieve("https://github.com/CoreSecurity/impacket/archive/impacket_0_9_15.zip","impacket_0_9_15.zip")
         
     zip_ref = zipfile.ZipFile('impacket_0_9_15.zip', 'r')
     zip_ref.extractall('.')
@@ -64,7 +64,7 @@ def main():
         print("Couldn't rename impacket - assuming already exists")
 
     if not is_non_zero_file('bleeding-jumbo.zip'):
-        urllib.request.urlretrieve ("https://github.com/magnumripper/JohnTheRipper/archive/bleeding-jumbo.zip","bleeding-jumbo.zip")
+        urllib.request.urlretrieve("https://github.com/magnumripper/JohnTheRipper/archive/bleeding-jumbo.zip","bleeding-jumbo.zip")
         
     zip_ref = zipfile.ZipFile('bleeding-jumbo.zip', 'r')
     zip_ref.extractall('.')
