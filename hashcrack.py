@@ -190,8 +190,6 @@ def selectparams( hashtype, nuke ):
 
 #autodetect the hashtype given the first line of the file
 def autodetect( line ):
-
-    print("Looking at :" + line)
     
     if re.search(r'(^|:)\$1\$',line):
         print('Autodetected md5crypt')
@@ -367,8 +365,9 @@ def autodetect( line ):
        
     return ''
 
-def btexec( sexec ):
-    print('RUN: '+sexec) 
+def btexec( sexec, show=1 ):
+    if not show:
+        print('RUN: '+sexec) 
     os.system(sexec)
 
 #actually do the hashcat runs
@@ -404,6 +403,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
     trailer=trailer+' '+potfile+' '+username
 
     if show:
+        trailer=' '+potfile+' '+username
         btexec(hcbin+' -m '+hashtype+' '+pwdfile+' --show '+trailer)
         return
 
@@ -418,7 +418,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
     if found:
         #run list of found passwords against the new ones, various combinations
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' found.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' found.txt -r rules/best64.rule --loopback '+trailer)
+        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' found.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
         btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last3.txt '+trailer)
 
         if is_non_zero_file('dict/ofound.txt'):
@@ -433,7 +433,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
     if words:
         print("Using bog standard dictionary words")
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt -r rules/best64.rule --loopback '+trailer)
+        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
         btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last3.txt '+trailer)
                 
         if dolast==1:
@@ -443,7 +443,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
     if phrases:
         print("Using phrases")
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt -r rules/best64.rule --loopback '+trailer)
+        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
         btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last3.txt '+trailer)
         
         if dolast==1:            
@@ -562,12 +562,10 @@ def main():
     if re.match(r'^/',loc):
         stdoutdata = subprocess.check_output("uname -a", shell=True)
         uname=bytearray(stdoutdata).decode()
-        print(uname)
+
         if re.match(r'Linux',uname):
-            print("Running under UNIX")
             pathstyle='unix'
             unix=1
-            print("Using -w3")
             crackopts=crackopts+" -w3 "
             hashcathome='./hashcat-4.1.0'
             ruleshome='./hashcat-4.1.0/rules'
@@ -665,7 +663,8 @@ def main():
                 getregexpfromfile(':([^:]+)$',hashcathome+pathsep+'hashcat.potfile','found.txt',True)
             
     if infile:
-        print("Reading file: "+infile)
+        if not show:
+            print("Reading file: "+infile)
         if re.search(r'\.db$',infile):
             hashtype='responder'
             stype='responder'
@@ -715,7 +714,8 @@ def main():
             if (line.count(':')==2) and hashtype!='7300' and hashtype!='5500' and hashtype!='5600':
                 username=1
 
-    print("Cracking "+ hashtype + " type hashes")
+    if not show:
+        print("Cracking "+ hashtype + " type hashes")
     
     hcbin=hashcathome+pathsep+r'hashcat64'+exe
 
@@ -775,27 +775,30 @@ def main():
 
             infile=tmpfile+'.ntds'
             hashtype='1000'
-            stype='1000'     # fall through to pwdump processing now, cos that's what we've got
+            stype='pwdump'     # fall through to pwdump processing now, cos that's what we've got
             
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
-            btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer)
-            btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile)
+            if not show:
+                btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer)
+                btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile)
+                
+                inpfile = open(tmpfile,'r')
+                outfile = open(tmpfile2,'w')
+                l = inpfile.read()
+                
+                m = re.search(':([^:]+)$', l)
+                ans=m.group(1)
+                outfile.write(ans)
+                
+                inpfile.close()
+                outfile.close()
 
-            inpfile = open(tmpfile,'r')
-            outfile = open(tmpfile2,'w')
-            l = inpfile.read()
+                hashtype='1000'
             
-            m = re.search(':([^:]+)$', l)
-            ans=m.group(1)
-            outfile.write(ans)
-            
-            inpfile.close()
-            outfile.close()
+                btexec(hcbin+' -a0 -m '+hashtype+' '+infile+' '+tmpfile2+' -r rules/allcase.rule '+trailer )
 
             hashtype='1000'
-            
-            btexec(hcbin+' -a0 -m '+hashtype+' '+infile+' '+tmpfile2+' -r rules/allcase.rule '+trailer )
 
             (dict,rules,inc)=selectparams( hashtype, nuke )
 
@@ -877,7 +880,7 @@ def main():
             
             for row in conn.execute("SELECT fullhash FROM responder where type like 'NTLMv2%'"):
                 outfile.write(list(row)[0])
-                print(row)
+                #print(row)
                 recs=recs+1
                 
             outfile.close()
@@ -893,7 +896,7 @@ def main():
             
             for row in conn.execute("SELECT fullhash FROM responder where type like 'NTLMv1%'"):
                 outfile.write(list(row)[0])
-                print(row)
+                #print(row)
                 recs=recs+1
                 
             outfile.close()
@@ -912,11 +915,13 @@ def main():
             die("Couldn't autodetect, please specify manually")
         
         #"normal" crack goes here
-        print("Cracking hash type "+hashtype)
+        if not show:
+            print("Cracking hash type "+hashtype)
         
         (dict,rules,inc)=selectparams( hashtype, nuke )
-        
-        print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
+
+        if not show:
+            print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
         
         runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)
   
