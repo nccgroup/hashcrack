@@ -11,7 +11,12 @@ pip3 install -r requirements.txt
 
 python3 setup.py
 
-This will fetch about 30Gb of dictionaries
+This will fetch about 30Gb of dictionaries - YOU HAVE BEEN WARNED
+
+for 7z files, you will need perl and Compress::Raw::LZMA, so maybe one of these two depending on your perl distribution: 
+
+ppm install Compress::Raw::LZMA
+cpan install Compress::Raw::LZMA
 
 To run - various cases:
 

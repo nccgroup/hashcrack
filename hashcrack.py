@@ -362,6 +362,11 @@ def autodetect( line ):
 
     if re.search(r'(^|:)[A-fa-f0-9]{32}$',line):
         print('Autodetected NTLM. Probably - or, it might be MD5 (100) or MySQL 5 (300)')
+        ans=input('Ambigious input; could be NTLM, MD5 or MySQL5. Please specify on command line with -t md5 or -t ntlm. For now, enter "ntlm" (default), "md5" or "mysql5" : ')
+        if (re.search(r'md5',ans)):
+            return '0'
+        if (re.search(r'mysql5',ans)):
+            return '300'
         return '1000'  
        
     return ''
