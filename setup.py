@@ -13,7 +13,6 @@ import urllib.request
 import zipfile
 import shutil
 
-
 def is_non_zero_file(fpath):  
     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
@@ -24,6 +23,9 @@ def btexec( sexec ):
 def main():
     btexec('mkdir dict')
     #check for file existence and download
+    print("Installing impacket and other dependencies")
+    btexec("pip3 install -r requirements.txt")
+    
     print("Checking for dictionary files - will download if not present...")
     if not is_non_zero_file('dict/breachcompilation.txt'):
         if not is_non_zero_file('empdict.zip'):
@@ -44,6 +46,11 @@ def main():
 
     btexec('7z x hashcat-4.1.0.7z')
 
+    print("Getting JksPrivkPrepare.jar - for Java keystores")
+    if not is_non_zero_file('impacket_0_9_15.zip'):
+        urllib.request.urlretrieve ("https://github.com/floyd-fuh/JKS-private-key-cracker-hashcat/raw/master/JksPrivkPrepare.jar","JksPrivkPrepare.jar")
+
+    print("Getting impacket-0.9.15 - might need to get a different one to match the pip install of impacket")
     if not is_non_zero_file('impacket_0_9_15.zip'):
         urllib.request.urlretrieve ("https://github.com/CoreSecurity/impacket/archive/impacket_0_9_15.zip","impacket_0_9_15.zip")
         

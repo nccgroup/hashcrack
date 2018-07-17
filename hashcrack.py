@@ -824,7 +824,7 @@ def main():
 
         #7z
         if stype=='7z':
-            btexec(perlpath+' JohnTheRipper/run/7z2john.pl '+infile+' > '+tmpfile)
+            btexec(perlpath+' john/run/7z2john.pl '+infile+' > '+tmpfile)
             
             hashtype='11600'
 
