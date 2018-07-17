@@ -23,6 +23,7 @@ import zipfile
 import tempfile
 import time
 import stat
+import configparser
 
 # strip out the given regexp from ifile and stick it in ofile - unique strips out dupes if True
 def getregexpfromfile(pattern, ifile, ofile,unique):
@@ -365,7 +366,7 @@ def autodetect( line ):
        
     return ''
 
-def btexec( sexec, show=1 ):
+def btexec( sexec, show=0 ):
     if not show:
         print('RUN: '+sexec) 
     os.system(sexec)
@@ -642,6 +643,15 @@ def main():
         outfile = open(infile,'w')
         outfile.write(inhash)
         outfile.close()
+
+
+    config = configparser.ConfigParser()
+    config.read("hashcrack.cfg")
+    javapath = config.get('paths', 'javapath')
+    pythonpath = config.get('paths', 'pythonpath')
+    perlpath = config.get('paths', 'perlpath')
+
+
         
     hashtype=args.type
     
@@ -692,7 +702,7 @@ def main():
         if re.search(r'\.zip$',infile):
             hashtype='ifm'
             stype='ifm'
-
+            
     if infile:
         line=getfirstline(infile)
     else:
@@ -734,7 +744,7 @@ def main():
 
         # jks - invoke a subprocess to build the compatible file     
         if stype=='jks':
-            btexec('java -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
+            btexec(javapath+' -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
             
             hashtype='15500'
             
@@ -765,15 +775,23 @@ def main():
                 source.close()
                 
             zip_file.close()
+
+            #check for existence of "sam.reg"
+
+            sam = tdir+pathsep+"sam.reg"
             
-            if unix:
+            if is_non_zero_file(sam):  
+           
+                btexec(pythonpath+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'system.reg -security '+tdir+pathsep+'security.reg  -sam '+tdir+pathsep+'sam.reg LOCAL -outputfile '+tmpfile)
+                
+                infile=tmpfile+'.ntds'
 
-                btexec('python.exe impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile);                        
+                    
             else:
+                btexec(pythonpath+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
 
-                btexec('python impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
-
-            infile=tmpfile+'.ntds'
+                infile=tmpfile+'.ntds'
+                    
             hashtype='1000'
             stype='pwdump'     # fall through to pwdump processing now, cos that's what we've got
             
@@ -806,7 +824,7 @@ def main():
 
         #7z
         if stype=='7z':
-            btexec('perl JohnTheRipper/run/7z2john.pl '+infile+' > '+tmpfile)
+            btexec(perlpath+' JohnTheRipper/run/7z2john.pl '+infile+' > '+tmpfile)
             
             hashtype='11600'
 
@@ -816,7 +834,7 @@ def main():
 
         #ms office, various subtypes
         if stype=='msoffice':
-            btexec('python john/run/office2john.py '+infile+' > '+tmpfile)
+            btexec(pythonpath+' john/run/office2john.py '+infile+' > '+tmpfile)
             #get cut -f 2 colon
             getregexpfromfile('[^ :]:(.+)',tmpfile,tmpfile2,False)
 
@@ -844,7 +862,7 @@ def main():
 
         #PDF, various subtypes
         if stype=='pdf':
-            btexec('perl john/run/pdf2john.pl '+infile+' > '+tmpfile)
+            btexec(perlpath+' john/run/pdf2john.pl '+infile+' > '+tmpfile)
             #get cut -f 2 colon
             getregexpfromfile('[^ :]:(.+)',tmpfile,tmpfile2,False)
 
@@ -880,7 +898,6 @@ def main():
             
             for row in conn.execute("SELECT fullhash FROM responder where type like 'NTLMv2%'"):
                 outfile.write(list(row)[0])
-                #print(row)
                 recs=recs+1
                 
             outfile.close()
@@ -896,7 +913,6 @@ def main():
             
             for row in conn.execute("SELECT fullhash FROM responder where type like 'NTLMv1%'"):
                 outfile.write(list(row)[0])
-                #print(row)
                 recs=recs+1
                 
             outfile.close()
