@@ -685,6 +685,7 @@ def main():
                 
         if re.search(r'\.7z$',infile):
             hashtype='7z'
+            username=1
             stype='7z'
         
         if re.search(r'\.pdf$',infile):
