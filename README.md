@@ -7,41 +7,59 @@ NVIDIA drivers here: http://www.nvidia.co.uk/Download/index.aspx?lang=en-uk
 
 To install:
 
-pip3 install -r requirements.txt
+    pip3 install -r requirements.txt
+    python3 setup.py
 
-python3 setup.py
+If you don't have Python in your path:
+
+    <path to python>/python.exe -m pip install -r requirements.txt
+    <path to python>/python.exe setup.py
 
 This will fetch about 30Gb of dictionaries - YOU HAVE BEEN WARNED
 
 for 7z files, you will need perl and Compress::Raw::LZMA, so maybe one of these two depending on your perl distribution: 
 
-ppm install Compress::Raw::LZMA
-cpan install Compress::Raw::LZMA
+ActiveState Perl:
+
+    ppm install Compress::Raw::LZMA
+
+Strawberry Perl:
+
+    cpan install Compress::Raw::LZMA
 
 To run - various cases:
 
 Bog standard crack:
-python3 empiricist.py -i <input file>
+
+    python3 hashcrack.py -i <input file>
+
 or:
-python3 empiricist.py --hash <literal hash>
+
+    python3 hashcrack.py --hash <literal hash>
 
 Try harder - use words and phrases and previously found passwords 
-python3 empiricist.py --input <input file> --words --phrases --found
+
+    python3 hashcrack.py --input <input file> --words --phrases --found
 
 Nuclear option - use bigger rules + dict
-python3 empiricist.py --input <input file> --nuke
+
+    python3 hashcrack.py --input <input file> --nuke
 
 Try a bunch of dumb passwords:
-python3 empiricist.py -i <input file> --crib dict/dumb.txt
+
+    python3 hashcrack.py -i <input file> --crib dict/dumb.txt
 
 Try a bunch of dumb passwords part 2:
-python3 empiricist.py -i <input file> --mask default.hcmask
+
+    python3 hashcrack.py -i <input file> --mask default.hcmask
 
 Try your own mask:
-python3 empiricist.py -i <input file> --mask ?l?l?l?l?l?l
+
+    python3 hashcrack.py -i <input file> --mask ?l?l?l?l?l?l
 
 Run an IFM dump you've saved as a zip:
-python3 empiricist.py -i <input file.zip> [-t ifm] 
+
+    python3 hashcrack.py -i <input file.zip> [-t ifm] 
 
 See also test.bat
 
@@ -51,7 +69,7 @@ Input file may be a docx, pdf, JKS file, etc.
 See also crackstation dictionaries - https://crackstation.net/
 
 
-
+If you don't have Perl/Python/Java in your path, can set the correct paths in `hashcrack.cfg` - these are the paths to the executable files, rather than the directory the executable is in.
 
 
 
