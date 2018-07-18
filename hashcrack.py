@@ -377,8 +377,9 @@ def btexec( sexec, show=0 ):
     os.system(sexec)
 
 #actually do the hashcat runs
-#this can get somewhat complex depending on what it's been asked to do 
-def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show):
+#this can get somewhat complex depending on what it's been asked to do
+
+def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore):
 
     hcbin=hashcathome+pathsep+r'hashcat64'+exe
     
@@ -408,6 +409,20 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
 
     trailer=trailer+' '+potfile+' '+username
 
+    if skip:
+        skip=' --skip '+skip
+    else:
+        skip=''
+
+    if restore:
+        restore=' --restore'
+
+        if not show:
+            btexec(hcbin+' '+ trailer + restore)
+            return
+    else:
+        restore=''
+        
     if show:
         trailer=' '+potfile+' '+username
         btexec(hcbin+' -m '+hashtype+' '+pwdfile+' --show '+trailer)
@@ -469,21 +484,21 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         if mask:
             print("Using specified mask "+mask)
             if re.match('\?',mask): 
-                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' -i '+trailer)
+                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' -i '+trailer+skip)
             else:
-                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' '+trailer)
+                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' '+trailer+skip)
         if rmask:
             print("Using specified dict + mask: "+rmask) 
-            btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+d+' '+rmask+' '+trailer)
+            btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+d+' '+rmask+' '+trailer+skip)
     else:
         if rightdictoverride:
             #if we've got right dict override, this is a cross product (-a1) 
             print("Using specified left and right dictionaries")
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+rightdictoverride+'  '+trailer)
+            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+rightdictoverride+'  '+trailer+skip)
         else:
             #otherwise, "normal" dict + rules
             print("Using dict and rules")        
-            btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+d+' -r '+r+'  --loopback '+trailer)
+            btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+d+' -r '+r+'  --loopback '+trailer+skip)
         
             if dolast==1:
                 btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last3.txt '+trailer)
@@ -560,8 +575,6 @@ def main():
     incr=''
     unix=0
 
-    trailer=crackopts
-
     #platform identification
     loc=os.path.dirname(os.path.realpath(__file__))
 
@@ -594,6 +607,8 @@ def main():
         else:
             print("Unknown platform")
 
+    trailer=crackopts+' --session hc'
+            
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument('-i','--input', help='Input file' )
     parser.add_argument('--hash', help='Input hash' )
@@ -605,7 +620,9 @@ def main():
     parser.add_argument('-e','--rightdict', help='Second dictionary override')
     parser.add_argument('-r','--rules', help='Rules override')
     parser.add_argument('--potfile', help='Potfile override')
-
+    parser.add_argument('--skip', help='Skip argument to hashcat')
+    
+    parser.add_argument('--restore', action="store_true", help='Restore to last session')
     parser.add_argument('-s','--show', action="store_true", help='Just show stuff')
     parser.add_argument('-l','--last', action="store_true", help='Use last3 file together with the given or default dictionary')
     parser.add_argument('-f','--found', action="store_true", help='Update found list')
@@ -630,6 +647,8 @@ def main():
     username=args.username
     dolast=args.last
     nuke=args.nuke
+    skip=args.skip
+    restore=args.restore
     stype=args.type
     rightdict=args.rightdict
     dictoverride=args.dict
@@ -650,12 +669,16 @@ def main():
         outfile.close()
 
 
-    config = configparser.ConfigParser()
-    config.read("hashcrack.cfg")
-    javapath = config.get('paths', 'javapath')
-    pythonpath = config.get('paths', 'pythonpath')
-    perlpath = config.get('paths', 'perlpath')
-
+    try:
+        config = configparser.ConfigParser()
+        config.read("hashcrack.cfg")
+        javapath = config.get('paths', 'javapath')
+        pythonpath = config.get('paths', 'pythonpath')
+        perlpath = config.get('paths', 'perlpath')
+    except:
+        javapath='java'
+        pythonpath='python'
+        perlpath='perl'
 
         
     hashtype=args.type
@@ -756,7 +779,7 @@ def main():
             
             (dict,rules,inc)=selectparams( hashtype, nuke )
             
-            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show)  
+            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip)  
 
         # ifm - ntsdutil zipped output
         if stype=='ifm':
@@ -826,7 +849,7 @@ def main():
 
             (dict,rules,inc)=selectparams( hashtype, nuke )
 
-            runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)
+            runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
 
         #7z
         if stype=='7z':
@@ -836,7 +859,7 @@ def main():
 
             (dict,rules,inc)=selectparams( hashtype, nuke )
 
-            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)  
+            runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)  
 
         #ms office, various subtypes
         if stype=='msoffice':
@@ -863,7 +886,7 @@ def main():
                 
             (dict,rules,inc)=selectparams( hashtype, nuke )
 
-            runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)                
+            runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
 
 
         #PDF, various subtypes
@@ -891,7 +914,7 @@ def main():
 
             (dict,rules,inc)=selectparams( hashtype, nuke )
 
-            runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)                
+            runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
             
             
         #responder DB, so unpack and then run
@@ -913,7 +936,7 @@ def main():
 
                 (dict,rules,inc)=selectparams( hashtype, nuke )
             
-                runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)
+                runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
 
             recs=0
             
@@ -928,7 +951,7 @@ def main():
 
                 (dict,rules,inc)=selectparams( hashtype, nuke )
                 
-                runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)
+                runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
             
 
     else:
@@ -945,7 +968,7 @@ def main():
         if not show:
             print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
         
-        runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show)
+        runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore)
   
 if __name__== "__main__":
   main()
