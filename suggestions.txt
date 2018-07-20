@@ -1,0 +1,33 @@
+
+The program tries to pick some sensible defaults, but if it's not getting anything for you, try the following:
+
+Try phrases, dictionary words and previously found words. The latter will get them fromm your pot file - useful for trying found passwords against different hash types:
+
+--phrases --words --found
+
+Try existing dictionaries with common suffixes: 
+
+-d dict\Top95Thousand-probable.txt -e dict\last3.txt
+-d dict\Top95Thousand-probable.txt -e dict\last4.txt
+
+If you spot patterns, try and use them, e.g. digits followed by something more complex:
+
+-d dict\last3.txt --lmask ?d?d?d?d?d?d
+
+
+
+or something complex followed by digits:
+
+-d dict\Top95Thousand-probable.txt --rmask ?d?d?d?d?d?d
+
+
+or use a crib file of found passwords or guesses - keep it short though. This will generate variants of crib in one pass (leet2 rules) and then use the resulting file to attack using more rules.
+
+# cat crib.txt
+foobar
+baz
+quux
+
+$ python3 hashcrack.py -i ../128hex.txt --crib dict/crib.txt
+
+

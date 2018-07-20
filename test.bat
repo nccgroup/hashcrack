@@ -1,7 +1,9 @@
 REM start tests
 
 REM postgres
-python3 hashcrack.py -i tests/postgres.txt
+python3 hashcrack.py -i tests/postgres.txt --force
+
+python3 hashcrack.py -i tests/postgres.txt --show
 
 REM  autodetect - answer is "foo"
 python3 hashcrack.py --hash 0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33
@@ -29,7 +31,7 @@ REM  autodetect - hashcat example hashes where the answer is "hashcat"
 python3 hashcrack.py -i tests/sha256crypt.txt -d hashcat.txt
 python3 hashcrack.py -i tests/sha512crypt.txt -d hashcat.txt
 
-REM autodetect PDF
+REM autodetect PDF 
 python3 hashcrack.py -i tests/test-hashcat.pdf -d hashcat.txt
 
 REM autodetect Word 
