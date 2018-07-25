@@ -64,6 +64,21 @@ def file_age_in_seconds(pathname):
 #check if a file exists and is non empty
 def is_non_zero_file(fpath):  
     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
+
+def rules_exist(fpath,ruleshome):
+    if os.path.isfile(fpath) and os.path.getsize(fpath) > 0:
+        return True
+    if os.path.isfile(ruleshome+'/'+fpath) and os.path.getsize(ruleshome+'/'+fpath) > 0:
+        return True
+    return False
+
+def dict_exists(fpath,dicthome):
+    if os.path.isfile(fpath) and os.path.getsize(fpath) > 0:
+        return True
+    if os.path.isfile(dicthome+'/'+fpath) and os.path.getsize(dicthome+'/'+fpath) > 0:
+        return True
+    return False
+
     
 #halt with message      
 def die( message ):
@@ -105,7 +120,7 @@ def friendlymap( name ):
    return t 
 
 #pick some sensible defaults for the given hashtype
-def selectparams( hashtype, nuke ):
+def selectparams( hashtype, nuke, ruleshome, dicthome ):
 
     # default these, but then see if they're in the config fiile
     
@@ -117,10 +132,10 @@ def selectparams( hashtype, nuke ):
     dumbdict="words.txt"
         
     # rules
-    hugerules="nsav2dive.rule"
-    bigrules="InsidePro-PasswordsPro.rule"
-    smallrules="best64.rule"
-    nullrules="null.rule"
+    hugerules="rules/nsav2dive.rule"
+    bigrules="rules/InsidePro-PasswordsPro.rule"
+    smallrules="rules/best64.rule"
+    nullrules="rules/null.rule"
 
     try:
         config = configparser.ConfigParser()
@@ -135,11 +150,27 @@ def selectparams( hashtype, nuke ):
         bigrules = config.get('rules', 'bigrules')
         smallrules = config.get('rules', 'smallrules')
         nullrulres = config.get('rules', 'nullrules')
-        
-        
-        
+                        
     except:
         print("Error reading config files, so going with default dicts and rules")
+
+    if not dict_exists(massivedict,dicthome):
+        print("Massive dict "+massivedict+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")
+
+    if not dict_exists(bigdict,dicthome):
+        print("Big dict "+bigdict+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")
+
+    if not dict_exists(smalldict,dicthome):
+        print("Small dict "+smalldict+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")
+
+    if not rules_exist(hugerules,ruleshome):
+        print("Huge rules file "+hugerules+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")
+
+    if not rules_exist(bigrules,ruleshome):
+        print("Big rules file "+bigrules+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")
+
+    if not rules_exist(smallrules,ruleshome):
+        print("Small rules file "+smallrules+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")        
 
     pmap={0:    (hugedict,bigrules,8),   #md5
           12:   (bigdict,bigrules,7),    #postgres
@@ -381,9 +412,9 @@ def autodetect( line ):
     if re.search(r'(^|:)[A-fa-f0-9]{32}$',line):
         print('Autodetected NTLM. Probably - or, it might be MD5 (100) or MySQL 5 (300)')
         ans=input('Ambigious input; could be NTLM, MD5 or MySQL5. Please specify on command line with -t md5 or -t ntlm. For now, enter "ntlm" (default), "md5" or "mysql5" : ')
-        if (re.search(r'md5',ans)):
+        if (re.search(r'md5',ans, re.IGNORECASE)):
             return '0'
-        if (re.search(r'mysql5',ans)):
+        if (re.search(r'mysql5',ans, re.IGNORECASE)):
             return '300'
         return '1000'  
        
@@ -414,6 +445,10 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
             d='dict'+pathsep+d
     else:
         d=dicthome+'/'+dict
+        
+    if rightdictoverride:        
+        if not is_non_zero_file(rightdictoverride):
+            rightdictoverride='dict'+pathsep+rightdictoverride
 
     if username:
         username='--username'
@@ -690,8 +725,26 @@ def main():
     force=args.force
     stype=args.type
     rightdict=args.rightdict
+
+    if rightdict is not None:
+        if not is_non_zero_file(rightdict):
+            print("Can't find dictionary file "+rightdict)
+            sys.exit(1)
+        
     dictoverride=args.dict
+
+    if dictoverride is not None:
+        if not is_non_zero_file(dictoverride):
+            print("Can't find dictionary file "+dictoverride)
+            sys.exit(1)
+    
     rulesoverride=args.rules
+
+    if rulesoverride is not None:
+        if not is_non_zero_file(rulesoverride):
+            print("Can't find rules file "+rulesoverride)
+            sys.exit(1)
+        
     potfile=args.potfile
     rmask=args.rmask
     lmask=args.lmask
@@ -824,7 +877,7 @@ def main():
             
             hashtype='15500'
             
-            (dict,rules,inc)=selectparams( hashtype, nuke )
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
             
             runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)  
 
@@ -862,11 +915,19 @@ def main():
                 
                 infile=tmpfile+'.ntds'
 
+                if not is_non_zero_file(infile):
+                    print("Failed to generate ntds file - check impacket setup, and python2")
+                    sys.exit(1)
+
                     
             else:
                 btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
 
                 infile=tmpfile+'.ntds'
+            
+                if not is_non_zero_file(infile):
+                    print("Failed to generate ntds file - check impacket setup, and python2")
+                    sys.exit(1)
                     
             hashtype='1000'
             stype='pwdump'     # fall through to pwdump processing now, cos that's what we've got
@@ -894,7 +955,7 @@ def main():
 
             hashtype='1000'
 
-            (dict,rules,inc)=selectparams( hashtype, nuke )
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
             runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
 
@@ -904,7 +965,7 @@ def main():
             
             hashtype='11600'
 
-            (dict,rules,inc)=selectparams( hashtype, nuke )
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
             runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)  
 
@@ -915,6 +976,8 @@ def main():
             getregexpfromfile('[^ :]:(.+)',tmpfile,tmpfile2,False)
 
             wordver=getfirstline(tmpfile2)
+
+            hashtype="null"
 
             if re.match(r'\$office\$\*2013',wordver):
                 hashtype='9600'
@@ -930,8 +993,13 @@ def main():
 
             if re.match(r'\$oldoffice\$\*3',wordver):
                 hashtype='9800'
+
+            if hashtype=='null':
+                print("Failed to  file - check python2 and jtr path - specifically john/run/office2john.py")
+                sys.exit(1)
                 
-            (dict,rules,inc)=selectparams( hashtype, nuke )
+                
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
             runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
 
@@ -943,6 +1011,8 @@ def main():
             getregexpfromfile('[^ :]:(.+)',tmpfile,tmpfile2,False)
 
             pdfver=getfirstline(tmpfile2)
+
+            hashtype='null'
 
             if re.match(r'\$pdf\$1\*',pdfver):
                 hashtype='10400'
@@ -959,7 +1029,12 @@ def main():
             if re.match(r'\$pdf\$5\*6',pdfver):
                 hashtype='10700'
 
-            (dict,rules,inc)=selectparams( hashtype, nuke )
+            if hashtype=='null':
+                print("Failed to  file - check perl and jtr path - specifically john/run/pdf2john.pl")
+                sys.exit(1)
+                
+
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
             runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
             
@@ -981,9 +1056,11 @@ def main():
             if recs>0: # if there are any NetLMv2 hashes
                 hashtype='5600'
 
-                (dict,rules,inc)=selectparams( hashtype, nuke )
+                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
             
                 runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
+            else:
+                print("No NetLMv2 hashes obtained - check sqlite3 install")
 
             recs=0
             
@@ -996,9 +1073,11 @@ def main():
             if recs>0: # if there are any NetLMv1 hashes
                 hashtype='5500'
 
-                (dict,rules,inc)=selectparams( hashtype, nuke )
+                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
                 
                 runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
+            else:
+                print("No NetLMv1 hashes obtained - check sqlite3 install")
             
 
     else:
@@ -1010,7 +1089,7 @@ def main():
         if not show:
             print("Cracking hash type "+hashtype)
         
-        (dict,rules,inc)=selectparams( hashtype, nuke )
+        (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
         if not show:
             print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
