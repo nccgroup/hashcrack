@@ -46,8 +46,7 @@ def main():
     if not is_non_zero_file('hashcat-4.1.0.7z'):
         print("Got hashcat-4.1.0 (for UNIX), expanding...")    
         urllib.request.urlretrieve("https://hashcat.net/files/hashcat-4.1.0.7z","hashcat-4.1.0.7z")
-
-    btexec('7z x hashcat-4.1.0.7z')
+        btexec('7z x hashcat-4.1.0.7z')
 
     print("Getting JksPrivkPrepare.jar - for Java keystores")
     if not is_non_zero_file('JksPrivkPrepare.jar'):
@@ -88,7 +87,7 @@ def main():
     shutil.copy2('rules/nsav2dive.rule','hashcat-4.1.0/rules/')
 
     
-        
+    print("Done")        
 
 if __name__== "__main__":
   main()
