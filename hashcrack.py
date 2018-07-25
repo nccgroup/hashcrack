@@ -29,10 +29,7 @@ import configparser
 def getregexpfromfile(pattern, ifile, ofile,unique):
     inpfile = open(ifile, 'r', encoding="utf-8")
     outfile = open(ofile, 'w', encoding="utf-8")
-    seen={}
-
-    # need to map $HEX[xx xx xx]
-    
+    seen={}    
     
     for l in inpfile:
     
@@ -716,11 +713,12 @@ def main():
         config = configparser.ConfigParser()
         config.read("hashcrack.cfg")
         javapath = config.get('paths', 'javapath')
-        pythonpath = config.get('paths', 'pythonpath')
+        python2path = config.get('paths', 'python2path')
+        python3path = config.get('paths', 'python3path')
         perlpath = config.get('paths', 'perlpath')
     except:
         javapath='java'
-        pythonpath='python'
+        python2path='python'
         perlpath='perl'
 
         
@@ -860,13 +858,13 @@ def main():
             
             if is_non_zero_file(sam):  
            
-                btexec(pythonpath+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'system.reg -security '+tdir+pathsep+'security.reg  -sam '+tdir+pathsep+'sam.reg LOCAL -outputfile '+tmpfile)
+                btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'system.reg -security '+tdir+pathsep+'security.reg  -sam '+tdir+pathsep+'sam.reg LOCAL -outputfile '+tmpfile)
                 
                 infile=tmpfile+'.ntds'
 
                     
             else:
-                btexec(pythonpath+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
+                btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
 
                 infile=tmpfile+'.ntds'
                     
@@ -912,7 +910,7 @@ def main():
 
         #ms office, various subtypes
         if stype=='msoffice':
-            btexec(pythonpath+' john/run/office2john.py '+infile+' > '+tmpfile)
+            btexec(python2path+' john/run/office2john.py '+infile+' > '+tmpfile)
             #get cut -f 2 colon
             getregexpfromfile('[^ :]:(.+)',tmpfile,tmpfile2,False)
 

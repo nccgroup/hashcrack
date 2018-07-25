@@ -23,9 +23,12 @@ def btexec( sexec ):
 def main():
     btexec('mkdir dict')
     #check for file existence and download
-    print("Installing impacket and other dependencies")
+    print("Installing configparser and other dependencies - needs 'pip3' on path")
     btexec("pip3 install -r requirements.txt")
-    
+
+    print("Installing impacket - needs 'pip2' on path. this will only affect Windows IFM formats if it's not installed.")
+    btexec("pip2 install impacket==0.9.15")
+       
     print("Checking for dictionary files - will download if not present...")
     if not is_non_zero_file('dict/breachcompilation.txt'):
         if not is_non_zero_file('empdict.zip'):
