@@ -81,3 +81,15 @@ Thanks to https://github.com/berzerk0 for some wordlists - these are CC licensed
 Other wordlists used are openwall_all.txt from Solar Designer, a crack of 275mil of Troy Hunt's hashes (mine), and breachcompilation.txt - origin unknown. (Have merged the last two.)
 
 Includes https://www.7-zip.org/ code - which is LGPL. Thanks all! 
+
+nsav2dive.rule is from here - thanks! https://github.com/NSAKEY/nsa-rules
+
+License for nsav2dive.rule:
+
+The Fair License
+
+Copyright (c) 2015 _NSAKEY
+
+Usage of the works is permitted provided that this instrument is retained with the works, so that any entity that uses the works is notified of this instrument.
+
+DISCLAIMER: THE WORKS ARE WITHOUT WARRANTY.

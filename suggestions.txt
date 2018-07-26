@@ -31,3 +31,17 @@ quux
 $ python3 hashcrack.py -i ../128hex.txt --crib dict/crib.txt
 
 
+
+
+
+PRINCE preprocessor
+
+This does some magic with generating new combinations of words from a given wordlist, and maybe worth
+
+https://github.com/hashcat/princeprocessor/releases
+
+# ./princeprocessor/pp64.bin /root/dict/Top95Thousand-probable.txt --pw-min=9 --case-permute -l 1000000000 > /root/dict/prince.txt
+
+# python3 hashcrack.py -i ../128hex -d /root/dict/prince.txt
+
+
