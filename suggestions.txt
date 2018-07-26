@@ -1,24 +1,24 @@
 
-The program tries to pick some sensible defaults, but if it's not getting anything for you, try the following:
+The hashcrack program tries to pick some sensible defaults for you and runs hashcat against your wordlist, but if it's not getting anything for you, try the following:
 
 Try phrases, dictionary words and previously found words. The latter will get them fromm your pot file - useful for trying found passwords against different hash types:
 
---phrases --words --found
+$ python3 hashcrack.py -i sha512hashes.txt --phrases --words --found
 
 Try existing dictionaries with common suffixes: 
 
--d dict\Top95Thousand-probable.txt -e dict\last3.txt
--d dict\Top95Thousand-probable.txt -e dict\last4.txt
+$ python3 hashcrack.py -i sha512hashes.txt -d dict\Top95Thousand-probable.txt -e dict\last3.txt
+$ python3 hashcrack.py -i sha512hashes.txt-d dict\Top95Thousand-probable.txt -e dict\last4.txt
 
 If you spot patterns, try and use them, e.g. digits followed by something more complex:
 
--d dict\last3.txt --lmask ?d?d?d?d?d?d
+$ python3 hashcrack.py -i sha512hashes.txt -d dict\last3.txt --lmask ?d?d?d?d?d?d
 
 
 
 or something complex followed by digits:
 
--d dict\Top95Thousand-probable.txt --rmask ?d?d?d?d?d?d
+$ python3 hashcrack.py -i sha512hashes.txt -d dict\Top95Thousand-probable.txt --rmask ?d?d?d?d?d?d
 
 
 or use a crib file of found passwords or guesses - keep it short though. This will generate variants of crib in one pass (leet2 rules) and then use the resulting file to attack using more rules.
@@ -28,20 +28,17 @@ foobar
 baz
 quux
 
-$ python3 hashcrack.py -i ../128hex.txt --crib dict/crib.txt
-
-
-
+$ python3 hashcrack.py -i sha512hashes.txt --crib dict/crib.txt
 
 
 PRINCE preprocessor
 
-This does some magic with generating new combinations of words from a given wordlist, and maybe worth
+If you're still not getting anything sensible, try hashcat's PRINCE preprocessor. This does some statistical magic with generating new combinations of words from a given wordlist, and maybe worth a go:
 
-https://github.com/hashcat/princeprocessor/releases
+Get it here: https://github.com/hashcat/princeprocessor/releases
 
-# ./princeprocessor/pp64.bin /root/dict/Top95Thousand-probable.txt --pw-min=9 --case-permute -l 1000000000 > /root/dict/prince.txt
+$ ./princeprocessor/pp64.bin /root/dict/Top95Thousand-probable.txt --pw-min=9 --case-permute -l 1000000000 > /root/dict/prince.txt
 
-# python3 hashcrack.py -i ../128hex -d /root/dict/prince.txt
+$ python3 hashcrack.py -i ../128hex -d /root/dict/prince.txt
 
 
