@@ -42,3 +42,7 @@ $ ./princeprocessor/pp64.bin /root/dict/Top95Thousand-probable.txt --pw-min=9 --
 $ python3 hashcrack.py -i ../128hex -d /root/dict/prince.txt
 
 
+
+todo: 10th August - worst case
+can they get to uk from 15th?
+

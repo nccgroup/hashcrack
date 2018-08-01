@@ -90,6 +90,8 @@ def friendlymap( name ):
    fmap={'md5':'0',
          'sha1':'100',
          'ntlm':'1000',
+         'vbulletin':'2611',
+         'ipb':'2811',
          'mysql':'300',
          'lm':'3000',
          'sha256':'1400',
@@ -249,6 +251,10 @@ def autodetect( line ):
         print('Autodetected phpass')
         return '400'
 
+    if re.search(r'(^|:)\$H\$',line):
+        print('Autodetected phpass')
+        return '400'
+
     if re.search(r'(^|:)\$8\$',line):
         print('Autodetected Cisco type 8 (pbkdf2-sha256)')
         return '9200'
@@ -293,9 +299,17 @@ def autodetect( line ):
         print('Autodetected sha512crypt')
         return '1800'
 
-    if re.search(r'(^|:)[A-Fa-f0-9{32}:[A-Fa-f0-9]{14}$',line):
+    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{14}$',line):
         print('Autodetected DCC / ms cache')
         return '1100'
+
+    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{6}$',line):
+        print('Autodetected vBulletin (2611)')
+        return '2611'
+
+    if re.search(r'(^|:)[A-Fa-f0-9]{32}:.{5}$',line):
+        print('Autodetected IPB (2811)')
+        return '2811'
 
     if re.search(r'(^|:)[A-Fa-f0-9{32}:[A-Fa-f0-9]{49}$',line):
         print('Autodetected Citrix netscaler')
@@ -842,17 +856,95 @@ def main():
         if hashtype=='pwdump':
             stype='pwdump'
 
-    #preprocess oracle? 
+    #preprocess oracle? TODO
 
-    #count : chars to see if we need --username
-    if re.search(':',line):
-        if hashtype!='112' and hashtype!='12' and hashtype!='7300' and hashtype!='5500' and hashtype!='5600':
-            username=1
-        else:
-            #these ones already have one colon, so need to look for 2 
-            if (line.count(':')==2) and hashtype!='7300' and hashtype!='5500' and hashtype!='5600':
-                username=1
+    # how many colons we're expecting by hash type
+    colonmap={ '10':1,
+               '11':1,
+               '12':1,
+               '20':1,
+               '21':1,
+               '22':1,
+               '23':1,
+               '30':1,
+               '40':1,
+               '50':1,
+               '60':1,
+               '110':1,
+               '112':1,
+               '120':1,
+               '121':1,
+               '130':1,
+               '140':1,
+               '150':1,
+               '160':1,
+               '1100':1,
+               '1410':1,
+               '1420':1,
+               '1430':1,
+               '1440':1,
+               '1450':1,
+               '1460':1,
+               '1710':1,
+               '1720':1,
+               '1730':1,
+               '1740':1,
+               '1750':1,
+               '1760':1,
+               '2410':1,
+               '2611':1,
+               '2711':1,
+               '2811':1,
+               '3100':1,
+               '3710':1,
+               '3800':1,
+               '3910':1,
+               '4010':1,
+               '4110':1,
+               '4520':1,
+               '4521':1,
+               '4522':1,
+               '4800':2,
+               '4900':1,
+               '5300':8,
+               '5400':8,
+               '5500':5,
+               '5600':5,
+               '5800':1,
+               '6600':2,
+               '6800':2,
+               '7300':1,
+               '8200':3,
+               '8300':3,
+               '8400':1,
+               '8900':5,
+               '9720':1,
+               '9820':1,
+               '10100':3,
+               '10420':1,
+               '10900':3,
+               '11000':1,
+               '11500':1,
+               '11900':3,
+               '12000':3,
+               '12100':3,
+               '12600':1,
+               '13500':1,
+               '13800':1,
+               '13900':1,
+               '14000':1,
+               '14100':1,
+               '14400':1,
+               '14900':1,
+               '15000':1 }
 
+    colons=line.count(':')
+    expectedcolons=colonmap.get(hashtype,0)
+
+    #if we've got more colons than that, need --username flag
+    if colons>expectedcolons:
+       username=1
+                    
     if not show:
         print("Cracking "+ hashtype + " type hashes")
     
