@@ -227,6 +227,7 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
           10600:(bigdict,smallrules,0),  #PDF 1.7 L3
           10700:(bigdict,smallrules,0),  #PDF 1.7 L8
           10800:(bigdict,bigrules,6),    #sha384
+          12100:(smalldict,smallrules,0),  #cisco sha512 pbkdf2
           12300:(bigdict,smallrules,0),  #oracle12
           15500:(hugedict,bigrules,0)    #jks
     }
@@ -290,6 +291,10 @@ def autodetect( line ):
     if re.search(r'(^|:)\$2\$(a|b)',line):
         print('Autodetected bcrypt')
         return '3200'
+
+    if re.search(r'(^|:)sha512:',line):
+        print('Autodetected Cisco sha512 pbkdf2')
+        return '12100'
     
     if re.search(r'(^|:)\$5\$',line):
         print('Autodetected sha256crypt')
@@ -704,6 +709,8 @@ def main():
     parser.add_argument('-e','--rightdict', help='Second dictionary override')
     parser.add_argument('-r','--rules', help='Rules override')
     parser.add_argument('--potfile', help='Potfile override')
+    parser.add_argument('-a','--mininc', help='Min increment')
+    parser.add_argument('-z','--maxinc', help='Max increment')    
     parser.add_argument('--skip', help='Skip argument to hashcat')
     
     parser.add_argument('--restore', action="store_true", help='Restore to last session')
@@ -739,6 +746,18 @@ def main():
     force=args.force
     stype=args.type
     rightdict=args.rightdict
+    mininc=args.mininc
+    maxinc=args.maxinc
+
+    if maxinc is not None:
+        maxinc=int(maxinc)
+    else:
+        maxinc=0
+
+    if mininc is not None:
+        mininc=int(mininc)
+    else:
+        mininc=0
 
     if rightdict is not None:
         if not is_non_zero_file(rightdict):
@@ -854,7 +873,7 @@ def main():
     if hashtype=='auto':
         hashtype=autodetect(line)
         if hashtype=='pwdump':
-            stype='pwdump'
+            stype='pwdump'        
 
     #preprocess oracle? TODO
 
@@ -970,6 +989,9 @@ def main():
             hashtype='15500'
             
             (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            if maxinc is not None:
+                inc=maxinc
             
             runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)  
 
@@ -1049,6 +1071,9 @@ def main():
 
             (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
+            if maxinc is not None:
+                inc=maxinc
+
             runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
 
         #7z
@@ -1058,6 +1083,9 @@ def main():
             hashtype='11600'
 
             (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            if maxinc is not None:
+                inc=maxinc
 
             runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)  
 
@@ -1092,6 +1120,9 @@ def main():
                 
                 
             (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            if maxinc is not None:
+                inc=maxinc
 
             runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
 
@@ -1128,6 +1159,9 @@ def main():
 
             (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
+            if maxinc is not None:
+                inc=maxinc
+
             runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
             
             
@@ -1149,6 +1183,9 @@ def main():
                 hashtype='5600'
 
                 (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+                if maxinc is not None:
+                    inc=maxinc
             
                 runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
             else:
@@ -1166,6 +1203,9 @@ def main():
                 hashtype='5500'
 
                 (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+                if maxinc is not None:
+                    inc=maxinc
                 
                 runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
             else:
@@ -1182,6 +1222,9 @@ def main():
             print("Cracking hash type "+hashtype)
         
         (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+        if maxinc is not None:
+            inc=maxinc
 
         if not show:
             print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
