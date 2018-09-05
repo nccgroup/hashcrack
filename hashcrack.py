@@ -134,9 +134,9 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
     dumbdict="words.txt"
         
     # rules
-    hugerules="rules/nsav2dive.rule"
-    bigrules="rules/InsidePro-PasswordsPro.rule"
-    smallrules="rules/best64.rule"
+    hugerules="rules/l33tnsa.rule"
+    bigrules="rules/l33tpasspro.rule"
+    smallrules="rules/l33t64.rule"
     nullrules="rules/null.rule"
 
     try:
@@ -332,6 +332,13 @@ def autodetect( line ):
         print('Autodetected NetLMv2')
         return '5600'
 
+    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{210}$',line):
+        print('Autodetected NetLMv2')
+        return '5600'
+
+#99E4F711686149EBD1D67DD7848EF939
+#01100320004000A0053004D0042003100320003000A0053004D0042003100320005000A0053004D00420031003200080030003000000000000000000000000000000000900220063006900660073002F0035002E003100340038002E00330032002E00320032003200
+
     if re.search(r':[a-fA-f0-9]{48}:[a-fA-f0-9]{48}:',line):
         print('Autodetected NetLMv1')
         return '5500' 
@@ -429,12 +436,10 @@ def autodetect( line ):
         return '112' 
 
     if re.search(r'(^|:)[A-fa-f0-9]{32}$',line):
-        print('Autodetected NTLM. Probably - or, it might be MD5 (100) or MySQL 5 (300)')
-        ans=input('Ambigious input; could be NTLM, MD5 or MySQL5. Please specify on command line with -t md5 or -t ntlm. For now, enter "ntlm" (default), "md5" or "mysql5" : ')
+        print('Autodetected NTLM. Probably - or, it might be MD5 (100)x')
+        ans=input('Ambigious input; could be NTLM, MD5 or MySQL5. Please specify on command line with -t md5 or -t ntlm. For now, enter "ntlm" (default), "md5" : ')
         if (re.search(r'md5',ans, re.IGNORECASE)):
             return '0'
-        if (re.search(r'mysql5',ans, re.IGNORECASE)):
-            return '300'
         return '1000'  
        
     return ''
