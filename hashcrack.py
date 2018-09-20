@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 #
 #Released as open source by NCC Group Plc - http://www.nccgroup.com/
@@ -197,6 +197,7 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
           2400: (hugedict,bigrules,0),   #cisco 
           2410: (hugedict,bigrules,0),   #cisco
           2500: (bigdict,smallrules,0),  #wpa
+          2612: (smalldict,smallrules,0),#vbulletin
           2612: (bigdict,bigrules,8),    #phps
           3000: (hugedict,bigrules,7),   #lm
           3100: (bigdict,bigrules,0),    #oracle7+
@@ -234,9 +235,13 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
 
     tp = pmap.get(int(hashtype),(bigdict,bigrules,0))
     ls = list(tp)
+    
     if nuke:
+        #beef it up
         ls[0] = hugedict
         ls[1] = hugerules
+        if ls[2] != 0:
+            ls[2]=ls[2]+1
         tp=tuple(ls)        
 
     return tp
@@ -335,9 +340,6 @@ def autodetect( line ):
     if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{210}$',line):
         print('Autodetected NetLMv2')
         return '5600'
-
-#99E4F711686149EBD1D67DD7848EF939
-#01100320004000A0053004D0042003100320003000A0053004D0042003100320005000A0053004D00420031003200080030003000000000000000000000000000000000900220063006900660073002F0035002E003100340038002E00330032002E00320032003200
 
     if re.search(r':[a-fA-f0-9]{48}:[a-fA-f0-9]{48}:',line):
         print('Autodetected NetLMv1')
@@ -461,18 +463,21 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         if not is_non_zero_file(r):
             r='rules'+pathsep+r
     else:
-        r=ruleshome+'/'+rules    
+        if not re.search('^/',rules):            
+            r=ruleshome+'/'+rules    
 
     if dictoverride:
         d=dictoverride
         if not is_non_zero_file(d):
             d='dict'+pathsep+d
     else:
-        d=dicthome+'/'+dict
+        if not re.search('^/',dict):
+            d=dicthome+'/'+dict
         
     if rightdictoverride:        
         if not is_non_zero_file(rightdictoverride):
-            rightdictoverride='dict'+pathsep+rightdictoverride
+            if not re.search('^/',rightdictoverride):
+                rightdictoverride='dict'+pathsep+rightdictoverride
 
     if username:
         username='--username'
@@ -510,7 +515,10 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         force=' --force '
         trailer=trailer+' '+force
     else:
-        force='' 
+        force=''
+
+    if nuke:
+        found=1
         
     if show:
         trailer=' '+potfile+' '+username
@@ -518,14 +526,13 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         return
 
     if crib:
+        print("Processing crib file...")
         tmpcrib=crib+'.tmp'
         btexec(hcbin+' --stdout '+crib+'  -r '+ruleshome+pathsep+'leet2.rule -o '+tmpcrib)
         btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+tmpcrib+' -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
 
-    print("Using list of known passwords")        
-    print("Using your previously found list - from hashcat.potfile")
-
     if found:
+        print("Using previous found list with variations")
         #run list of found passwords against the new ones, various combinations
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' found.txt ?a?a -i '+trailer)
         btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' found.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
@@ -537,26 +544,29 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
             if dolast==1:
                 btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/ofound.txt '+dicthome+'/last4.txt '+trailer)
         
-        if dolast==1:
+        if dolast==1 or nuke:
             btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last4.txt '+trailer)
+
+        if nuke:
+            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last5.txt '+trailer)
         
     if words:
-        print("Using bog standard dictionary words")
+        print("Using bog standard dictionary words with variations")
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt ?a?a -i '+trailer)
         btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
         btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last3.txt '+trailer)
                 
-        if dolast==1:
+        if dolast==1 or nuke:
             btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last4.txt '+trailer)
 
 
     if phrases:
-        print("Using phrases")
+        print("Using phrases with variations")
         btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt ?a?a -i '+trailer)
         btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
         btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last3.txt '+trailer)
         
-        if dolast==1:            
+        if dolast==1 or nuke:     
             btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last4.txt '+trailer)
 
     if not noinc:
@@ -570,7 +580,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         rmask=mask
 
     if lmask:
-        print("Using specified dict + mask: "+lmask)        
+        print("Using specified left mask and dict: "+lmask)        
         btexec(hcbin+' -a7 -m '+hashtype+' '+pwdfile+' '+lmask+' '+d+' -i '+trailer+skip)
     else:    
         if rmask or mask:
@@ -581,7 +591,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
                 else:
                     btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' '+trailer+skip)
             if rmask:
-                print("Using specified dict + mask: "+rmask) 
+                print("Using specified dict + right mask: "+rmask) 
                 btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+d+' -i '+rmask+' '+trailer+skip)
         else:
             if rightdictoverride:
@@ -589,13 +599,17 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
                 print("Using specified left and right dictionaries")
                 btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+rightdictoverride+'  '+trailer+skip)
             else:
-                #otherwise, "normal" dict + rules
+                #otherwise, "normal" dict + rules run
                 print("Using dict and rules")        
                 btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+d+' -r '+r+'  --loopback '+trailer+skip)
-        
+
                 if dolast==1:
                     btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last3.txt '+trailer)
 
+                if nuke:                    
+                    btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last4.txt '+trailer)
+                    btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last5.txt '+trailer)                    
+                    
                 
 #get first line
 def getfirstline( file ):
@@ -623,6 +637,12 @@ def run_command(command):
 #main - read the options and do the set up for the cracking
 def main():
 
+    #needs to be run with python3
+    if sys.version_info < (3,0):
+        print("*** Needs python3 for utf-8 / encoding support")
+        
+    assert sys.version_info >= (3,0)
+
     #declarations
 
     exe='.bin'  # default to Linux for the moment 
@@ -632,7 +652,6 @@ def main():
     maskattack=0
     
     # setup my defaults
-#    infile=''
     hashtype     = 'auto'   # autodetect
     hashcathome='./hashcat-4.1.0' 
     dicthome='./dict'
