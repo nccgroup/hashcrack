@@ -103,6 +103,7 @@ def friendlymap( name ):
          'descrypt':'1500',
          'netlmv1':'5500',
          'netlmv2':'5600',
+         '7z':'11600',
          'apache':'1600',
          'dcc':'1100',
          'dcc2':'2100',
@@ -196,10 +197,10 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
           2100: (smalldict,smallrules,0),#dcc2 - slow
           2400: (hugedict,bigrules,0),   #cisco 
           2410: (hugedict,bigrules,0),   #cisco
-          2500: (bigdict,smallrules,0),  #wpa
+          2500: (smalldict,smallrules,0),  #wpa
           2612: (smalldict,smallrules,0),#vbulletin
           2612: (bigdict,bigrules,8),    #phps
-          3000: (hugedict,bigrules,7),   #lm
+          3000: (smalldict,bigrules,7),  #lm
           3100: (bigdict,bigrules,0),    #oracle7+
           111:  (bigdict,bigrules,0),    #nsldap SSHA1
           1411: (bigdict,bigrules,0),    #nsldap SSHA256
@@ -230,10 +231,12 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
           10800:(bigdict,bigrules,6),    #sha384
           12100:(smalldict,smallrules,0),  #cisco sha512 pbkdf2
           12300:(bigdict,smallrules,0),  #oracle12
+          13100:(smalldict,smallrules,0),  #kerberos
           15500:(hugedict,bigrules,0)    #jks
     }
 
-    tp = pmap.get(int(hashtype),(bigdict,bigrules,0))
+    tp = pmap.get(int(hashtype),(smalldict,smallrules,0))
+
     ls = list(tp)
     
     if nuke:
@@ -242,8 +245,9 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
         ls[1] = hugerules
         if ls[2] != 0:
             ls[2]=ls[2]+1
-        tp=tuple(ls)        
 
+    tp=tuple(ls)        
+        
     return tp
 
 #autodetect the hashtype given the first line of the file
@@ -252,6 +256,10 @@ def autodetect( line ):
     if re.search(r'(^|:)\$1\$',line):
         print('Autodetected md5crypt')
         return '500'
+
+    if re.search(r'(^|:)\$krb5tgs\$23\$',line):
+        print('Autodetected kerberos ticket type 13100')
+        return '13100'
     
     if re.search(r'(^|:)\$P\$',line):
         print('Autodetected phpass')
@@ -293,7 +301,7 @@ def autodetect( line ):
         print('Autodetect postgres MD5')
         return '12'
     
-    if re.search(r'(^|:)\$2\$(a|b)',line):
+    if re.search(r'(^|:)\$2(a|b|y)',line):
         print('Autodetected bcrypt')
         return '3200'
 
@@ -522,7 +530,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         
     if show:
         trailer=' '+potfile+' '+username
-        btexec(hcbin+' -m '+hashtype+' '+pwdfile+' --show '+trailer)
+        btexec(hcbin+' -m '+hashtype+' '+pwdfile+' --show --quiet '+trailer, show)
         return
 
     if crib:
@@ -530,6 +538,16 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         tmpcrib=crib+'.tmp'
         btexec(hcbin+' --stdout '+crib+'  -r '+ruleshome+pathsep+'leet2.rule -o '+tmpcrib)
         btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+tmpcrib+' -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
+
+    if not noinc:
+        if inc>0:
+            if not mask:
+                print("Incremental run up to "+str(inc))
+                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' -i --increment-max='+str(inc)+' '+trailer)
+        else:
+            print("Skipping inc (inc " + str(inc) + ")")        
+    else:
+        print("Skipping inc (--noinc)")        
 
     if found:
         print("Using previous found list with variations")
@@ -568,12 +586,6 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         
         if dolast==1 or nuke:     
             btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last4.txt '+trailer)
-
-    if not noinc:
-        if inc>0:
-            if not mask:
-                print("Incremental run up to "+str(inc))
-                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' -i --increment-max='+str(inc)+' '+trailer)
 
     #if we've got a dict + mask specified, they probably want this            
     if dictoverride and mask:
@@ -686,40 +698,6 @@ def main():
     remove=''
     incr=''
     unix=0
-
-    #platform identification
-    loc=os.path.dirname(os.path.realpath(__file__))
-
-    if re.match(r'^/',loc):
-        stdoutdata = subprocess.check_output("uname -a", shell=True)
-        uname=bytearray(stdoutdata).decode()
-
-        if re.match(r'Linux',uname):
-            pathstyle='unix'
-            unix=1
-            crackopts=crackopts+" -w4 "
-            hashcathome='./hashcat-4.1.0'
-            ruleshome='./hashcat-4.1.0/rules'
-            exe='.bin'
-        else:
-            print("Running under cygwin")
-            pathstyle='win32'
-            hashcathome='./hashcat-4.0.1' #relative path issues with 4.10
-            ruleshome='./hashcat-4.0.1/rules'
-            cygwin=1
-            exe='.exe'
-    else:
-        if re.match(r'[CDEF]:',loc):
-            print("Running under win32")
-            exe='.exe'
-            hashcathome='hashcat-4.0.1' #relative path issues with 4.10
-            pathstyle='win32'
-            pathsep=r'\\'
-            ruleshome='hashcat-4.0.1\\rules'
-        else:
-            print("Unknown platform")
-
-    trailer=crackopts+' --session hc'
             
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument('-i','--input', help='Input file' )
@@ -773,10 +751,44 @@ def main():
     mininc=args.mininc
     maxinc=args.maxinc
 
+    #platform identification
+    loc=os.path.dirname(os.path.realpath(__file__))
+
+    if re.match(r'^/',loc):
+        stdoutdata = subprocess.check_output("uname -a", shell=True)
+        uname=bytearray(stdoutdata).decode()
+
+        if re.match(r'Linux',uname):
+            pathstyle='unix'
+            unix=1
+            crackopts=crackopts+" -w4 "
+            hashcathome='./hashcat-5.0.0'
+            ruleshome='./hashcat-5.0.0/rules'
+            exe='.bin'
+        else:
+            if not show:
+                print("Running under cygwin")
+            pathstyle='win32'
+            hashcathome='./hashcat-4.0.1' #relative path issues with 4.10
+            ruleshome='./hashcat-4.0.1/rules'
+            cygwin=1
+            exe='.exe'
+    else:
+        if re.match(r'[CDEF]:',loc):
+            if not show:
+                print("Running under win32")
+            exe='.exe'
+            hashcathome='hashcat-4.0.1' #relative path issues with 4.10
+            pathstyle='win32'
+            pathsep=r'\\'
+            ruleshome='hashcat-4.0.1\\rules'
+        else:
+            print("Unknown platform")
+
+    trailer=crackopts+' --session hc'
+
     if maxinc is not None:
         maxinc=int(maxinc)
-    else:
-        maxinc=0
 
     if mininc is not None:
         mininc=int(mininc)
@@ -877,10 +889,6 @@ def main():
             hashtype='pdf'
             stype='pdf'
 
-        if re.search(r'\.7z$',infile):
-            hashtype='7z'
-            stype='7z'
-
         if re.search(r'\.(xls|doc)x?$',infile):
             hashtype='msoffice'
             stype='msoffice'
@@ -888,6 +896,15 @@ def main():
         if re.search(r'\.zip$',infile):
             hashtype='ifm'
             stype='ifm'
+
+#ifm support
+#C:\>ntdsutil
+#ntdsutil: activate instance ntds
+#ntdsutil: ifm
+#ifm: create full c:\temp\ifm
+#ifm: quit
+#ntdsutil: quit
+#Then zip c:\temp\ifm and submit this.
             
     if infile:
         line=getfirstline(infile)
@@ -1251,7 +1268,7 @@ def main():
             inc=maxinc
 
         if not show:
-            print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))        
+            print("Selected rules: "+rules+", dict "+dict+", inc "+str(inc))
         
         runhc(hashcathome, infile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove)
   
