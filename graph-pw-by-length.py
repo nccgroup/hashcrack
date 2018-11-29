@@ -14,14 +14,14 @@ import re
 # takes pot file or other output file, so hash:password or pwdump style uname:uid:foo:hash:password and makes a graph
 # as long as 
 
-output_file("passwords_by_length.html")
+output_file(sys.argv[1]+".html")
 
 maxh=0
 maxlen=0
 
 #static arrays, but most people won't be cracking passwords over 24 chars
 freq=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-pos=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+pos=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
 #first parse our pot file, or --show output
 with open(sys.argv[1]) as inf:
@@ -68,3 +68,5 @@ p.xgrid.grid_line_color = None
 p.ygrid.grid_line_color = None
 
 show(p)
+
+#/opt/python2.7.14/bin/python2.7 graph-by-length.py /var/www/jobs/9a51ca938afe9e12c7839c958c1acaab10379edc/cracked-hashes.txt.html
