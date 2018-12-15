@@ -4,7 +4,7 @@ from cx_Freeze import setup, Executable
 
 __version__ = "1.1.0"
 
-include_files = ['winhc.cfg','rules/l33tnsa.rule','rules/l33tpasspro.rule','rules/l33t64.rule','rules/null.rule','dict/Top95Thousand-probable.txt','dict/words.txt','tests/kerb7500.txt']
+include_files = ['winhc.cfg','map.cfg','quickmap.cfg','rules/l33tnsa.rule','rules/l33tpasspro.rule','rules/l33t64.rule','rules/null.rule','dict/Top95Thousand-probable.txt','dict/words.txt','tests/kerb7500.txt']
 
 # ,'dict/Top258Million-probable.txt','dict/Top32Million-probable.txt','cracked-passwords.txt']
 excludes = ["tkinter"]

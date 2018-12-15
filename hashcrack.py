@@ -9,6 +9,8 @@
 #
 #This software is licensed under AGPL v3 - see LICENSE.txt
 #
+#TODO preprocessors like prince, OMEN
+#TODO graph flag
 
 import re
 import base64
@@ -29,7 +31,7 @@ import configparser
 def getregexpfromfile(pattern, ifile, ofile,unique):
     inpfile = open(ifile, 'r', encoding="utf-8")
     outfile = open(ofile, 'w', encoding="utf-8")
-    seen={}    
+    seen={}
     
     for l in inpfile:
     
@@ -175,78 +177,37 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
     if not rules_exist(smallrules,ruleshome):
         print("Small rules file "+smallrules+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")        
 
-    pmap={0:    (hugedict,bigrules,8),   #md5
-          12:   (bigdict,bigrules,7),    #postgres
-          100:  (hugedict,bigrules,8),   #sha1
-          101:  (hugedict,bigrules,7),   #nsldap
-          112:  (bigdict,bigrules,0),    #oracle11
-          124:  (bigdict,bigrules,0),    #django sha1
-          131:  (bigdict,bigrules,0),    #mssql 2000
-          132:  (bigdict,bigrules,0),    #mssql 2005
-          1731: (bigdict,smallrules,0),  #mssql 2012+
-          300:  (bigdict,bigrules,7),    #mysql4.1/5
-          400:  (bigdict,smallrules,0),  #phpass
-          900:  (hugedict,bigrules,8),   #md4
-          1000: (hugedict,bigrules,8),   #ntlm
-          1100: (smalldict,bigrules,0),  #dcc
-          1400: (bigdict,bigrules,7),    #sha256
-          1500: (bigdict,smallrules,0),  #descrypt
-          1600: (smalldict,smallrules,0),#apache apr1
-          1700: (bigdict,bigrules,7),    #sha512
-          1800: (smalldict,smallrules,0),#sha512crypt
-          2100: (smalldict,smallrules,0),#dcc2 - slow
-          2400: (hugedict,bigrules,0),   #cisco 
-          2410: (hugedict,bigrules,0),   #cisco
-          2500: (smalldict,smallrules,0),  #wpa
-          2612: (smalldict,smallrules,0),#vbulletin
-          2612: (bigdict,bigrules,8),    #phps
-          3000: (smalldict,bigrules,7),  #lm
-          3100: (bigdict,bigrules,0),    #oracle7+
-          111:  (bigdict,bigrules,0),    #nsldap SSHA1
-          1411: (bigdict,bigrules,0),    #nsldap SSHA256
-          1711: (bigdict,bigrules,0),    #nsldap SSHA512
-          5300: (bigdict,smallrules,0),  #IKE-MD5
-          5400: (bigdict,smallrules,0),  #IKE-SHA1
-          5500: (bigdict,bigrules,0),    #netlmv1
-          5600: (bigdict,bigrules,0),    #netlmv2
-          6300: (bigdict,bigrules,0),    #aix various - smd5
-          6400: (bigdict,bigrules,0),    #  ssha256
-          6500: (bigdict,bigrules,0),    #  ssha512
-          6700: (bigdict,bigrules,0),    #  ssha1
-          7300: (bigdict,smallrules,0),  #IPMI
-          7400: (smalldict,smallrules,0),#sha256crypt
-          7900: (smalldict,smallrules,0),#drupal
-          8100: (bigdict,smallrules,0),  #netscaler
-          9200: (smalldict,smallrules,0),#cisco type 8 (pbkdf2-sha256)
-          9300: (smalldict,smallrules,0),#cisco type 9 (scrypt)
-          9400: (smalldict,smallrules,0),  #office various - 2007
-          9500: (bigdict,smallrules,0),  #  2010
-          9600: (bigdict,smallrules,0),  #  2013
-          9700: (bigdict,bigrules,0),    #  2003 t1
-          9800: (bigdict,bigrules,0),    #  2003 t2
-          10400:(bigdict,bigrules,0),    #PDF 1.1-1.3
-          10500:(bigdict,bigrules,0),    #PDF 1.4-1.6
-          10600:(bigdict,smallrules,0),  #PDF 1.7 L3
-          10700:(bigdict,smallrules,0),  #PDF 1.7 L8
-          10800:(bigdict,bigrules,6),    #sha384
-          12100:(smalldict,smallrules,0),  #cisco sha512 pbkdf2
-          12300:(bigdict,smallrules,0),  #oracle12
-          13100:(smalldict,smallrules,0),  #kerberos
-          15500:(hugedict,bigrules,0)    #jks
-    }
-
-    tp = pmap.get(int(hashtype),(smalldict,smallrules,0))
-
-    ls = list(tp)
-    
     if nuke:
-        #beef it up
-        ls[0] = hugedict
-        ls[1] = hugerules
-        if ls[2] != 0:
-            ls[2]=ls[2]+1
 
-    tp=tuple(ls)        
+        #open map.cfg
+        with open("map.cfg") as f:
+            for line in f:
+                try:
+                    (key, val) = line.split(':')
+
+                    if key == hashtype:
+                        (dict,rules,inc,hr)=val.split(',')
+                except:
+                    print(line)
+                
+    else:
+        
+        #open quickmap.cfg
+
+        with open("quickmap.cfg") as f:
+            for line in f:
+                try:
+                    (key, val) = line.split(':')
+
+                    if key == hashtype:
+                        (dict,rules,inc,hr)=val.split(',')
+                except:
+                    print(line)
+
+    dict=eval(dict)
+    rules=eval(rules)
+
+    tp=(dict,rules,int(inc))
         
     return tp
 
@@ -459,6 +420,18 @@ def btexec( sexec, show=0 ):
         print('RUN: '+sexec) 
     os.system(sexec)
 
+#run a shell command
+def btexeccwd(command,scwd,show=0):
+
+    if not show:
+        print("RUN: "+command)
+    
+    if scwd is not None:
+        p = subprocess.Popen(command, shell=True,
+                             cwd=scwd,                             
+                             stderr=subprocess.STDOUT)
+        junk = p.communicate()
+
 #actually do the hashcat runs
 #this can get somewhat complex depending on what it's been asked to do
 
@@ -508,7 +481,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         restore=' --restore'
 
         if not show:
-            btexec(hcbin+' '+ trailer + restore)
+            btexeccwd(hcbin+' '+ trailer + restore,hashcathome)
             return
     else:
         restore=''
@@ -530,20 +503,20 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         
     if show:
         trailer=' '+potfile+' '+username
-        btexec(hcbin+' -m '+hashtype+' '+pwdfile+' --show --quiet '+trailer, show)
+        btexeccwd(hcbin+' -m '+hashtype+' '+pwdfile+' --show --quiet '+trailer, hashcathome)
         return
 
     if crib:
         print("Processing crib file...")
         tmpcrib=crib+'.tmp'
-        btexec(hcbin+' --stdout '+crib+'  -r '+ruleshome+pathsep+'leet2.rule -o '+tmpcrib)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+tmpcrib+' -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
+        btexeccwd(hcbin+' --stdout '+crib+'  -r '+ruleshome+pathsep+'leet2.rule -o '+tmpcrib,hashcathome)
+        btexeccwd(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+tmpcrib+' -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer,hashcathome)
 
     if not noinc:
         if inc>0:
             if not mask:
                 print("Incremental run up to "+str(inc))
-                btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' -i --increment-max='+str(inc)+' '+trailer)
+                btexeccwd(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' -i --increment-max='+str(inc)+' '+trailer,hashcathome)
         else:
             print("Skipping inc (inc " + str(inc) + ")")        
     else:
@@ -552,40 +525,40 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
     if found:
         print("Using previous found list with variations")
         #run list of found passwords against the new ones, various combinations
-        btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' found.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' found.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
-        btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last3.txt '+trailer)
+        btexeccwd(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' found.txt ?a?a -i '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' found.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last3.txt '+trailer,hashcathome)
 
         if is_non_zero_file('dict/ofound.txt'):
-            btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' dict/ofound.txt ?a?a -i '+trailer)
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' dict/ofound.txt '+dicthome+'/last3.txt '+trailer)
+            btexeccwd(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' dict/ofound.txt ?a?a -i '+trailer,hashcathome)
+            btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' dict/ofound.txt '+dicthome+'/last3.txt '+trailer,hashcathome)
             if dolast==1:
-                btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/ofound.txt '+dicthome+'/last4.txt '+trailer)
+                btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/ofound.txt '+dicthome+'/last4.txt '+trailer,hashcathome)
         
         if dolast==1 or nuke:
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last4.txt '+trailer)
+            btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last4.txt '+trailer,hashcathome)
 
         if nuke:
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last5.txt '+trailer)
+            btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' found.txt '+dicthome+'/last5.txt '+trailer,hashcathome)
         
     if words:
         print("Using bog standard dictionary words with variations")
-        btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
-        btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last3.txt '+trailer)
+        btexeccwd(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt ?a?a -i '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last3.txt '+trailer,hashcathome)
                 
         if dolast==1 or nuke:
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last4.txt '+trailer)
+            btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/words.txt '+dicthome+'/last4.txt '+trailer,hashcathome)
 
 
     if phrases:
         print("Using phrases with variations")
-        btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt ?a?a -i '+trailer)
-        btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer)
-        btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last3.txt '+trailer)
+        btexeccwd(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt ?a?a -i '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt -r '+ruleshome+pathsep+'best64.rule --loopback '+trailer,hashcathome)
+        btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last3.txt '+trailer,hashcathome)
         
         if dolast==1 or nuke:     
-            btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last4.txt '+trailer)
+            btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+dicthome+'/phrases.txt '+dicthome+'/last4.txt '+trailer,hashcathome)
 
     #if we've got a dict + mask specified, they probably want this            
     if dictoverride and mask:
@@ -593,34 +566,34 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
 
     if lmask:
         print("Using specified left mask and dict: "+lmask)        
-        btexec(hcbin+' -a7 -m '+hashtype+' '+pwdfile+' '+lmask+' '+d+' -i '+trailer+skip)
+        btexeccwd(hcbin+' -a7 -m '+hashtype+' '+pwdfile+' '+lmask+' '+d+' -i '+trailer+skip,hashcathome)
     else:    
         if rmask or mask:
             if mask:
                 print("Using specified mask "+mask)
                 if re.match('\?',mask): 
-                    btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' -i '+trailer+skip)
+                    btexeccwd(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' -i '+trailer+skip,hashcathome)
                 else:
-                    btexec(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' '+trailer+skip)
+                    btexeccwd(hcbin+' -a3 -m '+hashtype+' '+pwdfile+' '+mask+' '+trailer+skip,hashcathome)
             if rmask:
                 print("Using specified dict + right mask: "+rmask) 
-                btexec(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+d+' -i '+rmask+' '+trailer+skip)
+                btexeccwd(hcbin+' -a6 -m '+hashtype+' '+pwdfile+' '+d+' -i '+rmask+' '+trailer+skip,hashcathome)
         else:
             if rightdictoverride:
                 #if we've got right dict override, this is a cross product (-a1) 
                 print("Using specified left and right dictionaries")
-                btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+rightdictoverride+'  '+trailer+skip)
+                btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+rightdictoverride+'  '+trailer+skip,hashcathome)
             else:
                 #otherwise, "normal" dict + rules run
                 print("Using dict and rules")        
-                btexec(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+d+' -r '+r+'  --loopback '+trailer+skip)
+                btexeccwd(hcbin+' -a0 -m '+hashtype+' '+pwdfile+' '+d+' -r '+r+'  --loopback '+trailer+skip,hashcathome)
 
                 if dolast==1:
-                    btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last3.txt '+trailer)
+                    btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last3.txt '+trailer,hashcathome)
 
                 if nuke:                    
-                    btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last4.txt '+trailer)
-                    btexec(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last5.txt '+trailer)                    
+                    btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last4.txt '+trailer,hashcathome)
+                    btexeccwd(hcbin+' -a1 -m '+hashtype+' '+pwdfile+' '+d+' '+dicthome+'/last5.txt '+trailer,hashcathome)                    
                     
                 
 #get first line
@@ -711,6 +684,10 @@ def main():
     parser.add_argument('-e','--rightdict', help='Second dictionary override')
     parser.add_argument('-r','--rules', help='Rules override')
     parser.add_argument('--potfile', help='Potfile override')
+    parser.add_argument('-tf','--thisfound', help='Use this instead of found.txt')
+    parser.add_argument('-P','--prince', help='Use PRINCE preprocessor')
+    parser.add_argument('-O','--omen', help='Use OMEN preprocessor')
+    parser.add_argument('-C','--chunk', help='Use this chunk size')    
     parser.add_argument('-a','--mininc', help='Min increment')
     parser.add_argument('-z','--maxinc', help='Max increment')    
     parser.add_argument('--skip', help='Skip argument to hashcat')
@@ -736,6 +713,10 @@ def main():
     show=args.show
     inhash=args.hash
     crib=args.crib
+
+    if crib is not None:
+        crib=os.path.abspath(crib)
+        
     words=args.words
     phrases=args.phrases
     mask=args.mask
@@ -751,8 +732,17 @@ def main():
     mininc=args.mininc
     maxinc=args.maxinc
 
+    #todo 
+    thisfound=args.found
+    chunk=args.chunk
+    prince=args.prince
+    omen=args.omen
+
     #platform identification
-    loc=os.path.dirname(os.path.realpath(__file__))
+    try:
+        loc=os.path.dirname(os.path.realpath(__file__))
+    except:
+        loc="C:"
 
     if re.match(r'^/',loc):
         stdoutdata = subprocess.check_output("uname -a", shell=True)
@@ -803,13 +793,22 @@ def main():
     dictoverride=args.dict
 
     if dictoverride is not None:
+        dictoverride=os.path.abspath(dictoverride)
         if not is_non_zero_file(dictoverride):
             print("Can't find dictionary file "+dictoverride)
             sys.exit(1)
-    
+            
+    if rightdict is not None:
+        rightdict=os.path.abspath(rightdict)
+        if not is_non_zero_file(rightdict):
+            print("Can't find dictionary file "+rightdict)
+            sys.exit(1)
+            
+            
     rulesoverride=args.rules
 
     if rulesoverride is not None:
+        rulesoverride=os.path.abspath(rulesoverride)
         if not is_non_zero_file(rulesoverride):
             print("Can't find rules file "+rulesoverride)
             sys.exit(1)
@@ -817,9 +816,10 @@ def main():
     potfile=args.potfile
     rmask=args.rmask
     lmask=args.lmask
-    noinc=args.noinc
+    noinc=args.noinc    
 
     if infile:
+        infile=os.path.abspath(infile)
         tmpfile=infile+'.tmp'
         tmpfile2=infile+'.tmp2'
     else:
@@ -831,6 +831,7 @@ def main():
         outfile.close()
 
 
+    
     try:
         config = configparser.ConfigParser()
         config.read("hashcrack.cfg")
@@ -838,10 +839,15 @@ def main():
         python2path = config.get('paths', 'python2path')
         python3path = config.get('paths', 'python3path')
         perlpath = config.get('paths', 'perlpath')
+
+        hashcathome = config.get('paths', 'hc')
+        ruleshome = config.get('paths', 'rules')
+        dicthome = config.get('paths', 'dict')
     except:
         javapath='java'
         python2path='python'
         perlpath='perl'
+        hcpath=os.path.abspath('hashcat-5.1.0')
 
         
     hashtype=args.type
@@ -1025,7 +1031,7 @@ def main():
 
         # jks - invoke a subprocess to build the compatible file     
         if stype=='jks':
-            btexec(javapath+' -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
+            btexeccwd(javapath+' -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
             
             hashtype='15500'
             
@@ -1090,8 +1096,8 @@ def main():
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
             if not show:
-                btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer)
-                btexec(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile)
+                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
+                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile,hashcathome)
                 
                 inpfile = open(tmpfile,'r')
                 outfile = open(tmpfile2,'w')
@@ -1106,7 +1112,7 @@ def main():
 
                 hashtype='1000'
             
-                btexec(hcbin+' -a0 -m '+hashtype+' '+infile+' '+tmpfile2+' -r rules/allcase.rule '+trailer )
+                btexeccwd(hcbin+' -a0 -m '+hashtype+' '+infile+' '+tmpfile2+' -r rules/allcase.rule '+trailer,hashcathome)
 
             hashtype='1000'
 

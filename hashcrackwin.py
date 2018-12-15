@@ -144,7 +144,8 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
     smallrules="l33t64.rule"
     nullrules="null.rule"
 
-    try:
+    #try:
+    if True:
         config = configparser.ConfigParser()
         config.read("winhc.cfg")
 
@@ -159,8 +160,8 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
         smallrules = config.get('rules', 'smallrules')
         nullrulres = config.get('rules', 'nullrules')
                         
-    except:
-        print("Error reading config files, so going with default dicts and rules")
+#    except:
+#        print("Error reading config file winhc.cfg, so going with default dicts and rules")
 
     if not dict_exists(bigdict,dicthome):
         print("Big dict "+bigdict+" doesn't seem to exist - could cause problems. Check config file winhc.cfg")
@@ -177,137 +178,42 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
     if not rules_exist(smallrules,ruleshome):
         print("Small rules file "+smallrules+" doesn't seem to exist - could cause problems. Check config file winhc.cfg")        
 
-    if nuke:
-        
-        pmap={0:    (hugedict,bigrules,8),   #md5
-              12:   (bigdict,bigrules,7),    #postgres
-              100:  (hugedict,bigrules,8),   #sha1
-              101:  (hugedict,bigrules,7),   #nsldap
-              112:  (bigdict,bigrules,0),    #oracle11
-              124:  (bigdict,bigrules,0),    #django sha1
-              131:  (bigdict,bigrules,0),    #mssql 2000
-              132:  (bigdict,bigrules,0),    #mssql 2005
-              1731: (bigdict,smallrules,0),  #mssql 2012+
-              300:  (bigdict,bigrules,7),    #mysql4.1/5
-              400:  (bigdict,smallrules,0),  #phpass
-              900:  (hugedict,bigrules,8),   #md4
-              1000: (hugedict,bigrules,8),   #ntlm
-              1100: (smalldict,bigrules,0),  #dcc
-              1400: (bigdict,bigrules,7),    #sha256
-              1500: (bigdict,smallrules,0),  #descrypt
-              1600: (smalldict,smallrules,0),#apache apr1
-              1700: (bigdict,bigrules,7),    #sha512
-              1800: (smalldict,smallrules,0),#sha512crypt
-              2100: (smalldict,smallrules,0),#dcc2 - slow
-              2400: (hugedict,bigrules,0),   #cisco 
-              2410: (hugedict,bigrules,0),   #cisco
-              2500: (smalldict,smallrules,0),  #wpa
-              2612: (smalldict,smallrules,0),#vbulletin
-              2612: (bigdict,bigrules,8),    #phps
-              3000: (smalldict,bigrules,7),  #lm
-              3100: (bigdict,bigrules,0),    #oracle7+
-              111:  (bigdict,bigrules,0),    #nsldap SSHA1
-              1411: (bigdict,bigrules,0),    #nsldap SSHA256
-              1711: (bigdict,bigrules,0),    #nsldap SSHA512
-              5300: (bigdict,smallrules,0),  #IKE-MD5
-              5400: (bigdict,smallrules,0),  #IKE-SHA1
-              5500: (bigdict,bigrules,0),    #netlmv1
-              5600: (bigdict,bigrules,0),    #netlmv2
-              6300: (bigdict,bigrules,0),    #aix various - smd5
-              6400: (bigdict,bigrules,0),    #  ssha256
-              6500: (bigdict,bigrules,0),    #  ssha512
-              6700: (bigdict,bigrules,0),    #  ssha1
-              7300: (bigdict,smallrules,0),  #IPMI
-              7400: (smalldict,smallrules,0),#sha256crypt
-              7500: (bigdict,hugerules,0),  #kerb tgs
-              7900: (smalldict,smallrules,0),#drupal
-              8100: (bigdict,smallrules,0),  #netscaler
-              9200: (smalldict,smallrules,0),#cisco type 8 (pbkdf2-sha256)
-              9300: (smalldict,smallrules,0),#cisco type 9 (scrypt)
-              9400: (smalldict,smallrules,0),  #office various - 2007
-              9500: (bigdict,smallrules,0),  #  2010
-              9600: (bigdict,smallrules,0),  #  2013
-              9700: (bigdict,bigrules,0),    #  2003 t1
-              9800: (bigdict,bigrules,0),    #  2003 t2
-              10400:(bigdict,bigrules,0),    #PDF 1.1-1.3
-              10500:(bigdict,bigrules,0),    #PDF 1.4-1.6
-              10600:(bigdict,smallrules,0),  #PDF 1.7 L3
-              10700:(bigdict,smallrules,0),  #PDF 1.7 L8
-              10800:(bigdict,bigrules,6),    #sha384
-              12100:(smalldict,smallrules,0),  #cisco sha512 pbkdf2
-              12300:(bigdict,smallrules,0),  #oracle12
-              13100:(smalldict,smallrules,0),  #kerberos
-              15500:(hugedict,bigrules,0)    #jks
-        }
 
+    dict=''
+    rules=''
+    inc=0
+    
+    if nuke:
+
+        #open map.cfg
+        with open("map.cfg") as f:
+            for line in f:
+                try:
+                    (key, val) = line.split(':')
+
+                    if key == hashtype:
+                        (dict,rules,inc,hr)=val.split(',')
+                except:
+                    print(line)
+                
     else:
         
-        pmap={0:    (bigdict,bigrules,0),   #md5
-              12:   (smalldict,bigrules,0),    #postgres
-              100:  (bigdict,bigrules,0),   #sha1
-              101:  (bigdict,bigrules,0),   #nsldap
-              112:  (smalldict,bigrules,0),    #oracle11
-              124:  (smalldict,bigrules,0),    #django sha1
-              131:  (smalldict,bigrules,0),    #mssql 2000
-              132:  (smalldict,bigrules,0),    #mssql 2005
-              1731: (smalldict,smallrules,0),  #mssql 2012+
-              300:  (smalldict,bigrules,0),    #mysql4.1/5
-              400:  (smalldict,smallrules,0),  #phpass
-              900:  (bigdict,bigrules,0),   #md4
-              1000: (bigdict,bigrules,0),   #ntlm
-              1100: (smalldict,bigrules,0),  #dcc
-              1400: (smalldict,bigrules,0),    #sha256
-              1500: (smalldict,smallrules,0),  #descrypt
-              1600: (smalldict,smallrules,0),#apache apr1
-              1700: (smalldict,bigrules,0),    #sha512
-              1800: (smalldict,smallrules,0),#sha512crypt
-              2100: (smalldict,smallrules,0),#dcc2 - slow
-              2400: (bigdict,bigrules,0),   #cisco 
-              2410: (bigdict,bigrules,0),   #cisco
-              2500: (smalldict,smallrules,0),  #wpa
-              2612: (smalldict,smallrules,0),#vbulletin
-              2612: (smalldict,bigrules,0),    #phps
-              3000: (smalldict,bigrules,0),  #lm
-              3100: (smalldict,bigrules,0),    #oracle7+
-              111:  (smalldict,bigrules,0),    #nsldap SSHA1
-              1411: (smalldict,bigrules,0),    #nsldap SSHA256
-              1711: (smalldict,bigrules,0),    #nsldap SSHA512
-              5300: (smalldict,smallrules,0),  #IKE-MD5
-              5400: (smalldict,smallrules,0),  #IKE-SHA1
-              5500: (smalldict,bigrules,0),    #netlmv1
-              5600: (smalldict,bigrules,0),    #netlmv2
-              6300: (smalldict,bigrules,0),    #aix various - smd5
-              6400: (smalldict,bigrules,0),    #  ssha256
-              6500: (smalldict,bigrules,0),    #  ssha512
-              6700: (smalldict,bigrules,0),    #  ssha1
-              7300: (smalldict,smallrules,0),  #IPMI
-              7400: (smalldict,smallrules,0),#sha256crypt
-              7500: (bigdict,bigrules,0),  #kerb tgs
-              7900: (smalldict,smallrules,0),#drupal
-              8100: (smalldict,smallrules,0),  #netscaler
-              9200: (smalldict,smallrules,0),#cisco type 8 (pbkdf2-sha256)
-              9300: (smalldict,smallrules,0),#cisco type 9 (scrypt)
-              9400: (smalldict,smallrules,0),  #office various - 2007
-              9500: (smalldict,smallrules,0),  #  2010
-              9600: (smalldict,smallrules,0),  #  2013
-              9700: (smalldict,bigrules,0),    #  2003 t1
-              9800: (smalldict,bigrules,0),    #  2003 t2
-              10400:(smalldict,bigrules,0),    #PDF 1.1-1.3
-              10500:(smalldict,bigrules,0),    #PDF 1.4-1.6
-              10600:(smalldict,smallrules,0),  #PDF 1.7 L3
-              10700:(smalldict,smallrules,0),  #PDF 1.7 L8
-              10800:(smalldict,bigrules,0),    #sha384
-              12100:(smalldict,smallrules,0),  #cisco sha512 pbkdf2
-              12300:(smalldict,smallrules,0),  #oracle12
-              13100:(smalldict,smallrules,0),  #kerberos
-              15500:(bigdict,bigrules,0)    #jks
-        }
+        #open quickmap.cfg
 
-    tp = pmap.get(int(hashtype),(smalldict,smallrules,0))
+        with open("quickmap.cfg") as f:
+            for line in f:
+                try:
+                    (key, val) = line.split(':')
 
-    ls = list(tp)
+                    if key == hashtype:
+                        (dict,rules,inc,hr)=val.split(',')
+                except:
+                    print(line)
 
-    tp=tuple(ls)        
+    dict=eval(dict)
+    rules=eval(rules)
+                    
+    tp=(dict,rules,int(inc))
         
     return tp
 
@@ -551,8 +457,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         if not is_non_zero_file(r):
             r='rules'+pathsep+r
     else:
-        if not re.search('^/',rules):            
-            r=ruleshome+rules    
+        r=ruleshome+rules    
 
     if dictoverride:
         d=dictoverride
@@ -665,8 +570,9 @@ def getfirstline( file ):
 #run a shell command
 def run_command(command,scwd):
 
+    print("CWD "+scwd)
     print("Command "+command)
-    
+
     if scwd is not None:
         p = subprocess.Popen(command, shell=True,
                              cwd=scwd,                             
@@ -679,9 +585,11 @@ def main():
 
     #needs to be run with python3
     if sys.version_info < (3,0):
-        print("*** Needs python3 for utf-8 / encoding support")
+        print("*** Needs python3 for utf-8 / encoding support")        
         
     assert sys.version_info >= (3,0)
+
+    print("Windows compiled version running...")
 
     #declarations
 
@@ -693,28 +601,40 @@ def main():
     
     # setup my defaults
     hashtype     = 'auto'   # autodetect
-    hashcathome='hashcat-4.0.1'
+    hashcathome  = 'hashcat-4.0.1'
     
     dicthome='dict'
     ruleshome='rules'
 
-    try:
+    print("Loading config")
+#    try:
+    if True:
         config = configparser.ConfigParser()
         config.read("winhc.cfg")
 
         hashcathome = config.get('paths', 'hc')
+
+        if re.search(r'\\$',hashcathome):
+            hashcathome=hashcathome[:-1]
+        
         ruleshome = config.get('paths', 'rules')
         
         if not re.search(r'\\$',ruleshome):
-            ruleshome+='\\'
+            ruleshome+='\\'        
             
         dicthome = config.get('paths', 'dict')
 
         if not re.search(r'\\$',dicthome):
             dicthome+='\\'
-                        
-    except:
-        print("Error reading config files, so going with default dicts and rules")
+
+
+
+        print("Ruleshome "+ruleshome)
+        
+        print("Dicthome "+dicthome)
+        print("HChome "+hashcathome)
+ #   except:
+ #       print("Error reading config files, so going with default dicts and rules")
 
     # declarations
     trailer=''
@@ -877,18 +797,20 @@ def main():
         outfile.close()
         print(infile)
 
-
-    hcpath = 'hashcat-5.1.0\hashcat64.bin'
+    #try relative path first
+    hcpath = 'hashcat-5.1.0'
     hcpath=os.path.abspath(hcpath)
     
     try:
         config = configparser.ConfigParser()
         config.read("winhc.cfg")
         hcpath = config.get('paths', 'hc')
+
+        if re.search(r'\\$',hashcathome):
+            hashcathome=hashcathome[:-1]        
     except:
         print("Couldn't read config file")
-
-        
+    
     hashtype=args.type
     
     if not hashtype:
