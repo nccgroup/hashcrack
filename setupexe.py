@@ -4,9 +4,7 @@ from cx_Freeze import setup, Executable
 
 __version__ = "1.1.0"
 
-include_files = ['winhc.cfg','map.cfg','quickmap.cfg','rules/l33tnsa.rule','rules/l33tpasspro.rule','rules/l33t64.rule','rules/null.rule','dict/Top95Thousand-probable.txt','dict/words.txt','tests/kerb7500.txt']
-
-# ,'dict/Top258Million-probable.txt','dict/Top32Million-probable.txt','cracked-passwords.txt']
+include_files = ['regmap.cfg','winhc.cfg','map.cfg','quickmap.cfg','rules/null.rule','tests/kerb7500.txt','tests/netlmv2.txt']
 excludes = ["tkinter"]
 packages = ["cx_freeze", "re", "base64", "os","sys","sqlite3","shutil","argparse","urllib","zipfile","tempfile","time","stat","configparser"]
 

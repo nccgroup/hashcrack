@@ -219,202 +219,18 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
 
 #autodetect the hashtype given the first line of the file
 def autodetect( line ):
-    
-    if re.search(r'(^|:)\$1\$',line):
-        print('Autodetected md5crypt')
-        return '500'
 
-    if re.search(r'(^|:)\$krb5tgs\$23\$',line):
-        print('Autodetected kerberos ticket type 13100')
-        return '13100'
-
-    if re.search(r'(^|:)\$krb5pa\$23\$',line):
-        print('Autodetected kerberos type 7500')
-        return '7500'
-    
-    if re.search(r'(^|:)\$P\$',line):
-        print('Autodetected phpass')
-        return '400'
-
-    if re.search(r'(^|:)\$H\$',line):
-        print('Autodetected phpass')
-        return '400'
-
-    if re.search(r'(^|:)\$8\$',line):
-        print('Autodetected Cisco type 8 (pbkdf2-sha256)')
-        return '9200'
-
-    if re.search(r'(^|:)\$9\$',line):
-        print('Autodetected Cisco type 9 (scrypt)')
-        return '9300'
-
-    if re.search(r'(^|:)sha1\$',line):
-        print('Autodetected Django SHA1')
-        return '124'
-    
-    if re.search(r'(^|:)\$S\$',line):
-        print('Autodetected Drupal')
-        return '7900'
-
-    if re.search(r'(^|:)\$PHPS\$',line):
-        print('Autodetected PHPS')
-        return '2612'
-
-    if re.search(r'(^|:)(A|a)dministrator:500:[A-Fa-f0-9]{32}:[A-Fa-f0-9]{32}:',line):
-        print('Autodetected pwdump')
-        return 'pwdump'
-
-    if re.search(r'[^:]+:\d+:[A-Fa-f0-9]{32}:[A-Fa-f0-9]{32}:',line):
-        print('Autodetected pwdump')
-        return 'pwdump'    
-
-    if re.search(r'(^|:)[a-f0-9]{32}:[A-Za-z0-9_]{1,10}$',line):
-        print('Autodetect postgres MD5')
-        return '12'
-    
-    if re.search(r'(^|:)\$2(a|b|y)',line):
-        print('Autodetected bcrypt')
-        return '3200'
-
-    if re.search(r'(^|:)sha512:',line):
-        print('Autodetected Cisco sha512 pbkdf2')
-        return '12100'
-    
-    if re.search(r'(^|:)\$5\$',line):
-        print('Autodetected sha256crypt')
-        return '7400'
-
-    if re.search(r'(^|:)\$6\$',line):
-        print('Autodetected sha512crypt')
-        return '1800'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{13,14}$',line):
-        print('Autodetected DCC / ms cache')
-        return '1100'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{6}$',line):
-        print('Autodetected vBulletin (2611)')
-        return '2611'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{32}:.{5}$',line):
-        print('Autodetected IPB (2811)')
-        return '2811'
-
-    if re.search(r'(^|:)[A-Fa-f0-9{32}:[A-Fa-f0-9]{49}$',line):
-        print('Autodetected Citrix netscaler')
-        return '8100'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{126,130}:[A-Fa-f0-9]{40}$',line):
-        print('Autodetected IPMI2')
-        return '7300'
-
-    if re.search(r'(^|:)[A-Za-z0-9\./]{43}$',line):
-        print('Autodetected Cisco type 4')
-        return '5700'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{16}:[A-Fa-f0-9]{32}:[A-Fa-f0-9]{106}$',line):
-        print('Autodetected NetLMv2')
-        return '5600'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{32}:[A-Fa-f0-9]{210}$',line):
-        print('Autodetected NetLMv2')
-        return '5600'
-
-    if re.search(r':[a-fA-f0-9]{48}:[a-fA-f0-9]{48}:',line):
-        print('Autodetected NetLMv1')
-        return '5500' 
-
-    if re.search(r'(^|:)[A-Za-z0-9\./]{16}$',line):
-        print('Autodetected Cisco ASA')
-        return '2400'   
-    
-    if re.search(r'(^|:)[A-Za-z0-9\./]{13}$',line):
-        print('Autodetected descrypt')
-        return '1500'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{40}$',line):
-        print('Autodetected SHA1')
-        return '100'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{64}$',line):
-        print('Autodetected SHA256')
-        return '1400'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{96}$',line):
-        print('Autodetected SHA384')
-        return '10800'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{128}$',line):
-        print('Autodetected SHA512')
-        return '1700'
-
-    if re.search(r'(^|:)[A-Fa-f0-9]{786}',line):
-        print('Autodetected WPA/WPA2')
-        return '2500'
-
-    if re.search(r'(^|:)\$apr1\$',line):
-        print('Autodetected apache MD5\n')
-        return '1600' 
-
-    if re.search(r'(^|:)\$DCC2',line):
-        print('Autodetected DCC2 / mscache2')
-        return '2100'
-
-    if re.search(r'(^|:)\{SHA\}',line):
-        print('Autodetected nsldap SHA1')
-        return '101'
-
-    if re.search(r'(^|:)\{SSHA256\}',line):
-        print('Autodetected ldap SHA256')
-        return '1411'
-
-    if re.search(r'(^|:)\{SSHA512\}',line):
-        print('Autodetected ldap SHA512')
-        return '1711'
-    
-    if re.search(r'(^|:)\{SSHA\}',line):
-        print('Autodetected ldap SSHA1')
-        return '111'
-
-    if re.search(r'(^|:)0x0100',line):
-        if re.search(r'(^|:)0x[A-Fa-f0-9]{52}$',line):
-            print('Autodetected MSSQL2005')
-            return '132'
-        if re.search(r'(^|:)0x[A-Fa-f0-9]{92}$',line):
-            print('Autodetected MSSQL2000')
-            return '131'
-
-    if re.search(r'(^|:)0x0200',line):
-        print('Autodetected MSSQL2012+')
-        return '1731'
-
-    if re.search(r'(^|:)\{smd5\}',line):
-        print('Autodetected AIX smd5')
-        return '6300'
-
-    if re.search(r'(^|:)\{ssha1\}',line):
-        print('Autodetected AIX ssha1')
-        return '6700'
-
-    if re.search(r'(^|:)\{ssha256\}',line):
-        print('Autodetected AIX ssha256')
-        return '6400'
-
-    if re.search(r'(^|:)\{ssha512\}',line):
-        print('Autodetected AIX ssha512')
-        return '6500'
-    
-    if re.search(r'(^|:)[A-Fa-f0-9]{40}$',line):
-        print('Autodetected MySQL5')
-        return '8100'
-
-    if re.search(r'(^|:)[A-fa-f0-9]{60}$',line):
-        print('Autodetected Oracle (112) - but it needs a hash between the first 40 and last 20 for some reason')
-        return '112'
-
-    if re.search(r'(^|:)[A-fa-f0-9]{40}:[A-fa-f0-9]{20}$',line):
-        print('Autodetected Oracle (112)')
-        return '112' 
+    with open("regmap.cfg") as f:
+        for cfgline in f:
+            try:
+                (regexp, type, hr) = cfgline.split('!')
+                
+                if re.search(regexp,line):
+                    print('Autodetected '+ hr)
+                    return type
+                
+            except:
+                print("Couldn't interpret " + cfgline) 
 
     if re.search(r'(^|:)[A-fa-f0-9]{32}$',line):
         print('Autodetected NTLM. Probably - or, it might be MD5 (100)x')
@@ -601,14 +417,14 @@ def main():
     
     # setup my defaults
     hashtype     = 'auto'   # autodetect
-    hashcathome  = 'hashcat-4.0.1'
+    hashcathome  = 'hashcat-5.1.0'
     
     dicthome='dict'
     ruleshome='rules'
 
     print("Loading config")
-#    try:
-    if True:
+    try:
+
         config = configparser.ConfigParser()
         config.read("winhc.cfg")
 
@@ -633,8 +449,8 @@ def main():
         
         print("Dicthome "+dicthome)
         print("HChome "+hashcathome)
- #   except:
- #       print("Error reading config files, so going with default dicts and rules")
+    except:
+        print("Error reading config files, so going with default dicts and rules")
 
     # declarations
     trailer=''
