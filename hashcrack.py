@@ -33,6 +33,10 @@ import stat
 import configparser
 import platform
 
+def fixpath(path):
+   path=re.sub(r'\\\\','\\',path)
+   return path
+
 # strip out the given regexp from ifile and stick it in ofile - unique strips out dupes if True
 def getregexpfromfile(pattern, ifile, ofile,unique):
     inpfile = open(ifile, 'r', encoding="utf-8")
@@ -262,8 +266,22 @@ def btexeccwd(command,scwd,show=0):
 
 def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove):
 
-    hcbin=hashcathome+pathsep+r'hashcat64'+exe
+    hcbin='hashcat64.exe'
+
+    crackeddict='cracked-passwords.txt'
     
+    try:
+        config = configparser.ConfigParser()
+        config.read("winhc.cfg")
+
+        dicthome = config.get('paths', 'dict')
+        if not re.search(r'\\$',dicthome):
+            dicthome+='\\'
+            
+        crackeddict = config.get('dicts', 'cracked')
+    except:
+        print("Failed to read config file\n")
+            
     if rulesoverride:
         r=rulesoverride
         if not is_non_zero_file(r):
@@ -466,7 +484,7 @@ def main():
     try:
 
         config = configparser.ConfigParser()
-        config.read("winhc.cfg")
+        config.read("hashcrack.cfg")
 
         hashcathome = config.get('paths', 'hc')
 
