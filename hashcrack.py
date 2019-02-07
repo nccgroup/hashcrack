@@ -214,8 +214,15 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
                 except:
                     print(line)
 
-    dict=eval(dict)
-    rules=eval(rules)
+    try:
+        dict=eval(dict)
+        rules=eval(rules)
+        inc=eval(inc)
+    except:
+        #guess
+        dict=eval('bigdict')
+        rules=eval('smallrules')
+        inc=0
 
     tp=(dict,rules,int(inc))
         
@@ -853,6 +860,7 @@ def main():
                '12000':3,
                '12100':3,
                '12600':1,
+               '13100':0,
                '13500':1,
                '13800':1,
                '13900':1,
@@ -932,12 +940,13 @@ def main():
            
                 btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'system.reg -security '+tdir+pathsep+'security.reg  -sam '+tdir+pathsep+'sam.reg LOCAL -outputfile '+tmpfile)
                 
-                infile=tmpfile+'.ntds'
+                infile=tmpfile+'.sam'
 
                 if not is_non_zero_file(infile):
-                    print("Failed to generate ntds file - check impacket setup, and python2")
+                    print("Failed to generate sam file - check impacket setup, and python2")
                     sys.exit(1)
 
+                #also cached creds 
                     
             else:
                 btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
@@ -954,16 +963,17 @@ def main():
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
             if not show:
-                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
+                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a -i '+trailer,hashcathome)
                 btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile,hashcathome)
                 
                 inpfile = open(tmpfile,'r')
                 outfile = open(tmpfile2,'w')
-                l = inpfile.read()
                 
-                m = re.search(':([^:]+)$', l)
-                ans=m.group(1)
-                outfile.write(ans)
+                with open(tmpfile) as inp:
+                    for l in inp:
+                        m = re.search(':([^:]+)$', l)
+                        ans=m.group(1)
+                        outfile.write(ans)                        
                 
                 inpfile.close()
                 outfile.close()
