@@ -9,13 +9,9 @@
 #
 #This software is licensed under AGPL v3 - see LICENSE.txt
 #
-#TODO preprocessors like prince, OMEN
-#TODO graph flag
-#TOD all files need to be abspathd
-#TODO merge hashcrackwin hashcrack
-
-#import platform
-# platform.system - Linux / Windows
+# v 1.01 'Kill the Power'
+#
+# thanks to Woody for beta testing
 
 import re
 import base64
@@ -32,10 +28,6 @@ import time
 import stat
 import configparser
 import platform
-
-def fixpath(path):
-   path=re.sub(r'\\\\','\\',path)
-   return path
 
 # strip out the given regexp from ifile and stick it in ofile - unique strips out dupes if True
 def getregexpfromfile(pattern, ifile, ofile,unique):
@@ -214,15 +206,8 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
                 except:
                     print(line)
 
-    try:
-        dict=eval(dict)
-        rules=eval(rules)
-        inc=eval(inc)
-    except:
-        #guess
-        dict=eval('bigdict')
-        rules=eval('smallrules')
-        inc=0
+    dict=eval(dict)
+    rules=eval(rules)
 
     tp=(dict,rules,int(inc))
         
@@ -260,7 +245,8 @@ def btexec( sexec, show=0 ):
 def btexeccwd(command,scwd,show=0):
 
     if not show:
-        print("RUN: "+command)
+       print("cwd "+scwd)
+       print("RUN: "+command)
     
     if scwd is not None:
         p = subprocess.Popen(command, shell=True,
@@ -273,18 +259,19 @@ def btexeccwd(command,scwd,show=0):
 
 def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove):
 
-    hcbin='hashcat64.exe'
+    if pathsep=='/':
+        hcbin='./hashcat64.bin'
+    else:
+        hcbin='hashcat64.exe'
 
     crackeddict='cracked-passwords.txt'
     
     try:
         config = configparser.ConfigParser()
-        config.read("winhc.cfg")
-
+        config.read("hashcrack.cfg")
+    
         dicthome = config.get('paths', 'dict')
-        if not re.search(r'\\$',dicthome):
-            dicthome+='\\'
-            
+       
         crackeddict = config.get('dicts', 'cracked')
     except:
         print("Failed to read config file\n")
@@ -494,21 +481,10 @@ def main():
         config.read("hashcrack.cfg")
 
         hashcathome = config.get('paths', 'hc')
-
-        if re.search(r'\\$',hashcathome):
-            hashcathome=hashcathome[:-1]
         
         ruleshome = config.get('paths', 'rules')
         
-        if not re.search(r'\\$',ruleshome):
-            ruleshome+='\\'        
-            
         dicthome = config.get('paths', 'dict')
-
-        if not re.search(r'\\$',dicthome):
-            dicthome+='\\'
-
-
 
         print("Ruleshome "+ruleshome)
         
@@ -860,7 +836,6 @@ def main():
                '12000':3,
                '12100':3,
                '12600':1,
-               '13100':0,
                '13500':1,
                '13800':1,
                '13900':1,
@@ -940,13 +915,12 @@ def main():
            
                 btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'system.reg -security '+tdir+pathsep+'security.reg  -sam '+tdir+pathsep+'sam.reg LOCAL -outputfile '+tmpfile)
                 
-                infile=tmpfile+'.sam'
+                infile=tmpfile+'.ntds'
 
                 if not is_non_zero_file(infile):
-                    print("Failed to generate sam file - check impacket setup, and python2")
+                    print("Failed to generate ntds file - check impacket setup, and python2")
                     sys.exit(1)
 
-                #also cached creds 
                     
             else:
                 btexec(python2path+' impacket/examples/secretsdump.py -system '+tdir+pathsep+'SYSTEM  -ntds '+tdir+pathsep+'ntds.dit LOCAL -outputfile '+tmpfile) 
@@ -963,17 +937,16 @@ def main():
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
             if not show:
-                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a -i '+trailer,hashcathome)
+                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
                 btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile,hashcathome)
                 
                 inpfile = open(tmpfile,'r')
                 outfile = open(tmpfile2,'w')
+                l = inpfile.read()
                 
-                with open(tmpfile) as inp:
-                    for l in inp:
-                        m = re.search(':([^:]+)$', l)
-                        ans=m.group(1)
-                        outfile.write(ans)                        
+                m = re.search(':([^:]+)$', l)
+                ans=m.group(1)
+                outfile.write(ans)
                 
                 inpfile.close()
                 outfile.close()
