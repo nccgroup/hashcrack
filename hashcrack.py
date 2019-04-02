@@ -28,6 +28,9 @@ import time
 import stat
 import configparser
 import platform
+import requests, urllib3, datetime, bs4
+
+pcsubmit = 1
 
 # strip out the given regexp from ifile and stick it in ofile - unique strips out dupes if True
 def getregexpfromfile(pattern, ifile, ofile,unique):
@@ -258,6 +261,7 @@ def btexeccwd(command,scwd,show=0):
 #this can get somewhat complex depending on what it's been asked to do
 
 def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove):
+    global pcsubmit
 
     if pathsep=='/':
         hcbin='./hashcat64.bin'
@@ -265,6 +269,80 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
         hcbin='hashcat64.exe'
 
     crackeddict='cracked-passwords.txt'
+
+    try:
+        if pcsubmit == 0 :
+            print("Attempting to submit job to passcrack")
+            
+            pconfig = configparser.ConfigParser()
+            pconfig.read("hashcrack.cfg")
+
+            pcurl = 'https://passcrack.pentest.ngs/AddJob.php'
+            try:
+                pcurl = pconfig.get('passcrack', 'pcurl')
+            except:
+                print("Defaulting to 'https://passcrack.pentest.ngs/AddJob.php' as URL")
+
+
+            pcemail = pconfig.get('passcrack', 'pcemail')
+            pcuser = pconfig.get('passcrack', 'pcname')
+
+            f = open(pwdfile, "r")
+            pccontents = f.read()
+
+            #open map.cfg
+            with open("passcrack.cfg") as f:
+                for line in f:
+                    (key, val) = line.split('!')
+                        
+                    if key == hashtype:
+                        pcalg=val
+            proxies = {
+                'http': 'http://127.0.0.1:8080',
+                'https': 'http://127.0.0.1:8080'
+            }
+            
+            urllib3.disable_warnings()
+                
+            resp = requests.post(
+                pcurl,
+                headers={
+                    'Connection': 'close',
+                    'Cache-Control': 'max-age=0',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                    'Referer': pcurl,
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                data={
+                    'user': pcuser,
+                    'algorithm': pcalg,
+                    'email': pcemail,
+                    'includeInWordlist': '1',
+                    'hashes': pccontents
+                },
+                verify=False, proxies=proxies
+            )
+
+            pcsubmit=1
+
+            #debug only
+            #print(resp.content)
+            
+            m = re.search('href="./index.php\?key=([a-f0-9]+)"', resp.content.decode('utf-8'))
+            ans=m.group(1)
+            if ans:
+                print("Successfully submitted as job " + ans)
+            else:
+                print("Something went wrong submitting job")
+            
+            #a href="./index.php?key=2e88bb2cdfffc86b7945bb618b76eb7ff5dc22ce
+        
+    except Exception as e:
+        print("Failed to talk to passcrack")
+        print(e)
     
     try:
         config = configparser.ConfigParser()
@@ -453,6 +531,7 @@ def run_command(command):
 
 #main - read the options and do the set up for the cracking
 def main():
+    global pcsubmit
 
     #needs to be run with python3
     if sys.version_info < (3,0):
@@ -486,10 +565,9 @@ def main():
         
         dicthome = config.get('paths', 'dict')
 
-        print("Ruleshome "+ruleshome)
-        
-        print("Dicthome "+dicthome)
-        print("HChome "+hashcathome)
+        #print("Ruleshome "+ruleshome)        
+        #print("Dicthome "+dicthome)
+        #print("HChome "+hashcathome)
     except:
         print("Error reading config files, so going with default dicts and rules")
 
@@ -543,6 +621,7 @@ def main():
     parser.add_argument('-a','--mininc', help='Min increment')
     parser.add_argument('-z','--maxinc', help='Max increment')    
     parser.add_argument('--skip', help='Skip argument to hashcat')
+    parser.add_argument('--pc', action="store_true", help='Submit job to passcrack as well as local crack')
     
     parser.add_argument('--restore', action="store_true", help='Restore to last session')
     parser.add_argument('-s','--show', action="store_true", help='Just show stuff')
@@ -571,6 +650,10 @@ def main():
 
     if crib is not None:
         crib=os.path.abspath(crib)
+
+    #clear "have submitted to passcrack" flag if we've been asked to submit
+    if args.pc:
+        pcsubmit=0
         
     words=args.words
     phrases=args.phrases
@@ -853,10 +936,7 @@ def main():
     #if we've got more colons than that, need --username flag
     if colons>expectedcolons:
        username=1
-                    
-    if not show:
-        print("Cracking "+ hashtype + " type hashes")
-    
+                        
     hcbin=hashcathome+pathsep+r'hashcat64'+exe
 
     #preprocess some types
