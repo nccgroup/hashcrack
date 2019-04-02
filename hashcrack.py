@@ -277,12 +277,11 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
             pconfig = configparser.ConfigParser()
             pconfig.read("hashcrack.cfg")
 
-            pcurl = 'https://passcrack.pentest.ngs/AddJob.php'
+            pcurl = ''
             try:
                 pcurl = pconfig.get('passcrack', 'pcurl')
             except:
-                print("Defaulting to 'https://passcrack.pentest.ngs/AddJob.php' as URL")
-
+                print("Can't find passcrack URL - check hashcrack.cfg, section [passcrack]")
 
             pcemail = pconfig.get('passcrack', 'pcemail')
             pcuser = pconfig.get('passcrack', 'pcname')
@@ -297,6 +296,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
                         
                     if key == hashtype:
                         pcalg=val
+                        
             proxies = {
                 'http': 'http://127.0.0.1:8080',
                 'https': 'http://127.0.0.1:8080'
@@ -323,7 +323,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
                     'includeInWordlist': '1',
                     'hashes': pccontents
                 },
-                verify=False, proxies=proxies
+                verify=False #, proxies=proxies
             )
 
             pcsubmit=1
