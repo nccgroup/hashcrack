@@ -1019,18 +1019,18 @@ def main():
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
             if not show:
-                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
+                btexeccwd(hcbin+' -a3 -m 3000 -i '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
                 btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile,hashcathome)
-                
-                inpfile = open(tmpfile,'r')
+
                 outfile = open(tmpfile2,'w')
-                l = inpfile.read()
                 
-                m = re.search(':([^:]+)$', l)
-                ans=m.group(1)
-                outfile.write(ans)
-                
-                inpfile.close()
+                with open(tmpfile,'r') as inpfile:
+                    for l in inpfile:
+                        m = re.search(':([^:]+)$', l)
+                        ans=m.group(1)
+                        if re.match('[a-zA-Z0-9]', ans):
+                            outfile.write(ans)
+                    
                 outfile.close()
 
                 hashtype='1000'
