@@ -40,7 +40,7 @@ def main():
 
     if not is_non_zero_file('hashcat-4.0.1.7z'):
         print("Got hashcat-4.0.1 (for Windows), expanding...")    
-        urllib.request.urlretrieve ("https://hashcat.net/files_legacy/hashcat-4.0.1.7z", "hashcat-4.0.1.7z")
+        urllib.request.urlretrieve ("https://hashcat.net/files/hashcat-4.0.1.7z", "hashcat-4.0.1.7z")
         btexec('7z x hashcat-4.0.1.7z')
             
     if not is_non_zero_file('hashcat-4.1.0.7z'):
