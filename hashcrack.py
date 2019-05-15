@@ -209,8 +209,13 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
                 except:
                     print(line)
 
-    dict=eval(dict)
-    rules=eval(rules)
+    try: 
+        dict=eval(dict)
+        rules=eval(rules)
+    except:
+        dict=bigdict
+        rules=bigrules
+        inc=0
 
     tp=(dict,rules,int(inc))
         
@@ -694,6 +699,7 @@ def main():
             pathstyle='win32'
             pathsep=r'\\'
             ruleshome='hashcat-5.1.0\\rules'
+            crackopts=crackopts+" -w3 "
         else:
             print("Unknown platform")
             exit
