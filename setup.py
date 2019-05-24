@@ -27,10 +27,10 @@ def main():
     btexec("pip3 install -r requirements.txt")
 
     print("Installing impacket - needs 'pip2' on path. this will only affect Windows IFM formats if it's not installed.")
-    btexec("pip2 install impacket==0.9.15")
+    btexec("pip2 install impacket==0.9.19")
        
-    print("Checking for dictionary files - will download if not present...")
-    if not is_non_zero_file('dict/breachcompilation.txt'):
+    print("Checking for dictionary files - will download some if not present...")
+    if False: #not is_non_zero_file('dict/breachcompilation.txt'):
         if not is_non_zero_file('empdict.zip'):
             urllib.request.urlretrieve ("http://www.blacktraffic.co.uk/pw-dict-public/empdict.zip", "empdict.zip")
         print("Got dictionary zip, expanding...")    
@@ -38,30 +38,25 @@ def main():
         zip_ref.extractall('.')
         zip_ref.close()
 
-    if not is_non_zero_file('hashcat-4.0.1.7z'):
-        print("Got hashcat-4.0.1 (for Windows), expanding...")    
-        urllib.request.urlretrieve ("https://hashcat.net/files_legacy/hashcat-4.0.1.7z", "hashcat-4.0.1.7z")
-        btexec('7z x hashcat-4.0.1.7z')
-            
-    if not is_non_zero_file('hashcat-4.1.0.7z'):
-        print("Got hashcat-4.1.0 (for UNIX), expanding...")    
-        urllib.request.urlretrieve("https://hashcat.net/files/hashcat-4.1.0.7z","hashcat-4.1.0.7z")
-        btexec('7z x hashcat-4.1.0.7z')
+    if not is_non_zero_file('hashcat-5.1.0.7z'):
+        print("Got hashcat-5.1.0, expanding...")    
+        urllib.request.urlretrieve("https://hashcat.net/files/hashcat-5.1.0.7z","hashcat-5.1.0.7z")
+        btexec('7z x hashcat-5.1.0.7z')
 
     print("Getting JksPrivkPrepare.jar - for Java keystores")
     if not is_non_zero_file('JksPrivkPrepare.jar'):
         urllib.request.urlretrieve("https://github.com/floyd-fuh/JKS-private-key-cracker-hashcat/raw/master/JksPrivkPrepare.jar","JksPrivkPrepare.jar")
 
-    print("Getting impacket-0.9.15 - might need to get a different one to match the pip install of impacket")
-    if not is_non_zero_file('impacket_0_9_15.zip'):
-        urllib.request.urlretrieve("https://github.com/CoreSecurity/impacket/archive/impacket_0_9_15.zip","impacket_0_9_15.zip")
+    print("Getting impacket-0.9.19 - might need to get a different one to match the pip install of impacket")
+    if not is_non_zero_file('impacket_0_9_19.zip'):
+        urllib.request.urlretrieve("https://github.com/CoreSecurity/impacket/archive/impacket_0_9_19.zip","impacket_0_9_19.zip")
         
-    zip_ref = zipfile.ZipFile('impacket_0_9_15.zip', 'r')
+    zip_ref = zipfile.ZipFile('impacket_0_9_19.zip', 'r')
     zip_ref.extractall('.')
     zip_ref.close()
 
     try:
-        os.rename('impacket-impacket_0_9_15','impacket')
+        os.rename('impacket-impacket_0_9_19','impacket')
     except:
         print("Couldn't rename impacket - assuming already exists")
 
@@ -77,14 +72,9 @@ def main():
     except:
         print("Couldn't rename john - assuming already exists")
         
-    shutil.copy2('rules/leet2.rule','hashcat-4.0.1/rules/')
-    shutil.copy2('rules/leet2.rule','hashcat-4.1.0/rules/')
-
-    shutil.copy2('rules/allcase.rule','hashcat-4.0.1/rules/')
-    shutil.copy2('rules/allcase.rule','hashcat-4.1.0/rules/')
-
-    shutil.copy2('rules/nsav2dive.rule','hashcat-4.0.1/rules/')
-    shutil.copy2('rules/nsav2dive.rule','hashcat-4.1.0/rules/')
+    shutil.copy2('rules/leet2.rule','hashcat-5.1.0/rules/')
+    shutil.copy2('rules/allcase.rule','hashcat-5.1.0/rules/')
+    shutil.copy2('rules/nsav2dive.rule','hashcat-5.1.0/rules/')
 
     
     print("Done")        

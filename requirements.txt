@@ -1,1 +1,3 @@
 configparser
+bs4
+
