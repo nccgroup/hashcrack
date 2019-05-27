@@ -596,7 +596,7 @@ def main():
     
     # for hashcat4
     #crackopts=" -O --quiet "
-    crackopts=" -O "
+    crackopts=" -O --bitmap-max=24 "
 
     uname=''
     loc=''
@@ -1025,8 +1025,11 @@ def main():
         #pwdump - do the LM stuff for cribs and then all case permuatations of that. then normal crack
         if stype=='pwdump':
             if not show:
-                btexeccwd(hcbin+' -a3 -m 3000 -i '+infile+' ?a?a?a?a?a?a?a '+trailer,hashcathome)
-                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet -o '+tmpfile,hashcathome)
+                pf=''
+                if potfile is not None:
+                    pf='--potfile-path '+potfile
+                btexeccwd(hcbin+' -a3 -m 3000 -i '+infile+' ?a?a?a?a?a?a?a '+pf+' '+trailer,hashcathome)
+                btexeccwd(hcbin+' -a3 -m 3000 '+infile+' ?a?a?a?a?a?a?a --show --quiet '+pf+' -o '+tmpfile,hashcathome)
 
                 outfile = open(tmpfile2,'w')
                 
