@@ -76,8 +76,8 @@ def main():
     shutil.copy2('rules/allcase.rule','hashcat-5.1.0/rules/')
     shutil.copy2('rules/nsav2dive.rule','hashcat-5.1.0/rules/')
     shutil.copy2('rules/l33tpasspro.rule','hashcat-5.1.0/rules/')
-    
-    print("Done")        
+
+    print("Done - now change the paths in hashcrack.cfg to point to dict, rules, hashcat")   
 
 if __name__== "__main__":
   main()
