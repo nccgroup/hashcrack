@@ -104,8 +104,11 @@ def friendlymap( name ):
          'sha256':'1400',
          'sha512':'1700',
          'oracle7':'3100',
+         'oracle-h':'3100',
          'oracle11':'112',
+         'oracle-s':'112',
          'oracle12':'12300',
+         'oracle-t':'12300',
          'md5crypt':'500',
          'descrypt':'1500',
          'netlmv1':'5500',
@@ -123,7 +126,8 @@ def friendlymap( name ):
          'wpa':'2500',
          'phps':'2612',
          'sha3':'5000',
-         'sha384':'10800'
+         'sha384':'10800',
+         'zip':'13600'
    }
 
    t = fmap.get(name, 'auto')
@@ -182,16 +186,21 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
     if not rules_exist(smallrules,ruleshome):
         print("Small rules file "+smallrules+" doesn't seem to exist - could cause problems. Check config file hashcat.cfg")        
 
+
+        
     if nuke:
+        #unhelpful naming, sorry
 
         #open map.cfg
         with open("map.cfg") as f:
             for line in f:
                 try:
                     (key, val) = line.split(':')
-
+                    
                     if key == hashtype:
                         (dict,rules,inc,hr)=val.split(',')
+                        print('Found '+key)
+                        
                 except:
                     print(line)
                 
@@ -206,17 +215,21 @@ def selectparams( hashtype, nuke, ruleshome, dicthome ):
 
                     if key == hashtype:
                         (dict,rules,inc,hr)=val.split(',')
+                        print('Found '+key)
+                        
                 except:
                     print(line)
 
-    try: 
-        dict=eval(dict)
-        rules=eval(rules)
-    except:
-        dict=bigdict
-        rules=bigrules
-        inc=0
-
+                    
+    if not re.search(hashtype,'opencl'):                
+        try: 
+            dict=eval(dict)
+            rules=eval(rules)
+        except:
+            dict=bigdict
+            rules=bigrules
+            inc=0
+            
     tp=(dict,rules,int(inc))
         
     return tp
@@ -262,6 +275,38 @@ def btexeccwd(command,scwd,show=0):
                              stderr=subprocess.STDOUT)
         junk = p.communicate()
 
+#jtr - experimental
+def runjtr( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdictoverride, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke, found, potfile, noinc, show, skip, restore, force, remove):
+    
+    if pathsep=='/':
+        jtrbin='./john/run/john'
+    else:
+        jtrbin='john\\run\\john.exe'
+
+        
+    try:
+        config = configparser.ConfigParser()
+        config.read("hashcrack.cfg")
+    
+        dicthome = config.get('paths', 'dict')
+       
+        crackeddict = config.get('dicts', 'cracked')
+    except:
+        print("Failed to read config file\n")
+
+
+    if dictoverride:
+        d=dictoverride
+        if not is_non_zero_file(d):
+            d='dict'+pathsep+d
+    else:
+        if not re.search('^/',dict):
+            d=dicthome+pathsep+dict
+
+    #also mask attacks ... and the rest of it. TODO                     
+    btexec(jtrbin+' --format='+hashtype+' '+pwdfile+' '+rules+' --wordlist='+dicthome+pathsep+dict)
+        
+        
 #actually do the hashcat runs
 #this can get somewhat complex depending on what it's been asked to do
 
@@ -341,9 +386,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
             if ans:
                 print("Successfully submitted as job " + ans)
             else:
-                print("Something went wrong submitting job")
-            
-            #a href="./index.php?key=2e88bb2cdfffc86b7945bb618b76eb7ff5dc22ce
+                print("Something went wrong submitting job")        
         
     except Exception as e:
         print("Failed to talk to passcrack")
@@ -830,8 +873,12 @@ def main():
             stype='msoffice'
 
         if re.search(r'\.zip$',infile):
-            hashtype='ifm'
-            stype='ifm'
+            hashtype='zip'
+            stype='zip'
+
+        if re.search(r'\.gpg$',infile):
+            hashtype='gpg'
+            stype='gpg'
 
 #ifm support
 #C:\>ntdsutil
@@ -848,11 +895,14 @@ def main():
         line=inhash
 
     if hashtype=='auto':
-        hashtype=autodetect(line)
+        if stype is not None:
+            if stype!='oracle':
+                hashtype=autodetect(line)
+        else:
+            hashtype=autodetect(line)
+            
         if hashtype=='pwdump':
             stype='pwdump'        
-
-    #preprocess oracle? TODO
 
     # how many colons we're expecting by hash type
     colonmap={ '10':1,
@@ -953,10 +1003,80 @@ def main():
         infile=tmpfile
         hashtype='500'
         stype=''          
-
+        
     # deal with non-numeric (special) types first
     if stype and not re.match(r'^\d+$',hashtype):
         # most are preprocessed to temp file, then normal crack
+
+        if stype=='oracle':
+
+            #split into h, s, t types
+
+            sname = tmpfile+'.112'
+            hname = tmpfile+'.3100'
+            tname = tmpfile+'.12300'
+            
+            stype = open(sname,'w')
+            htype = open(hname,'w')
+            ttype = open(tname,'w')
+
+ 
+            with open(infile,encoding='utf-8') as f:
+                for i in f:
+                    m = re.search('S:([a-fA-f0-9]{60})', i)
+                    if m is not None:
+                        ans=m.group(1)
+                        if ans is not None:
+                            stype.write(ans[:-20]+':'+ans[-20:]+"\n")
+
+                    m = re.search('T:([a-fA-f0-9]{160})', i)
+                    if m is not None:
+                        ans=m.group(1)
+                        if ans is not None:
+                            ttype.write(ans+"\n")
+                    
+                    m = re.search('H:([a-fA-f0-9]{32})', i)
+                    if m is not None:
+                        ans=m.group(1)                        
+                        if ans is not None:
+                            htype.write(ans[:-16]+':'+ans[-16:]+"\n")
+                    
+            stype.close()
+            ttype.close()
+            htype.close()
+
+            if is_non_zero_file(hname):
+                hashtype='3100'
+                
+                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+                if maxinc is not None:
+                    inc=maxinc
+            
+                runhc(hashcathome, hname, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, '', nuke, found, potfile, noinc, show, skip, restore, force, remove)
+                
+            
+            if is_non_zero_file(sname):
+                hashtype='112'
+
+                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+                if maxinc is not None:
+                    inc=maxinc
+            
+                runhc(hashcathome, sname, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, '', nuke, found, potfile, noinc, show, skip, restore, force, remove)
+
+            if is_non_zero_file(tname):
+                hashtype='12300'
+
+                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+                if maxinc is not None:
+                    inc=maxinc
+            
+                runhc(hashcathome, tname, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, '', nuke, found, potfile, noinc, show, skip, restore, force, remove)                
+            
+            
 
         # jks - invoke a subprocess to build the compatible file     
         if stype=='jks':
@@ -971,6 +1091,69 @@ def main():
             
             runhc(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)  
 
+        #first JTR target ! 
+        if stype=='gpg':
+            #windows / linux switch
+            if pathsep=='/':
+                btexec('john/run/gpg2john '+infile+' > '+tmpfile)
+            else:
+                btexec('john\\run\\gpg2john.exe '+infile+' > '+tmpfile)
+                  
+            hashtype='gpg-opencl'
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            print('RULES- '+rules)
+            
+            runjtr(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)
+
+        if stype=='zip-jtr':
+            #windows / linux switch
+            if pathsep=='/':
+                btexec('john/run/zip2john '+infile+' > '+tmpfile)
+            else:
+                btexec('john\\run\\zip2john.exe '+infile+' > '+tmpfile)
+
+            hashtype='zip-opencl'
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            if maxinc is not None:
+                inc=maxinc
+            
+            runjtr(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)  
+
+        if stype=='zip':
+            #windows / linux switch
+            if pathsep=='/':
+                btexec('john/run/zip2john '+infile+' > '+tmpfile)
+            else:
+                btexec('john\\run\\zip2john.exe '+infile+' > '+tmpfile)
+
+            #cat tmpfile | cut -f2 -d':' > tmpfile2
+            ff = open(tmpfile2,'w')
+
+            try: 
+                with open(tmpfile,encoding='utf-8') as f:
+                    for i in f:
+                        print(i)
+                        l=i.split(':')
+                        h=l[1]
+                        ff.write(h+"\n")
+                        print(h)
+                    
+            except:
+                print("Couldn't preprocess zip hash")
+
+            ff.close()
+                
+            hashtype='13600'
+            (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+
+            if maxinc is not None:
+                inc=maxinc
+            
+            runhc(hashcathome, tmpfile2, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, nuke , found, potfile, noinc, show, skip, restore, force, remove)  
+            
+            
         # ifm - ntsdutil zipped output
         if stype=='ifm':
             
@@ -1038,7 +1221,7 @@ def main():
                         m = re.search(':([^:]+)$', l)
                         ans=m.group(1)
                         if re.match('[a-zA-Z0-9]', ans):
-                            outfile.write(ans)
+                            outfile.write(ans+"\n")
                     
                 outfile.close()
 
@@ -1191,7 +1374,7 @@ def main():
                 print("No NetLMv1 hashes obtained - check sqlite3 install")
             
 
-    else:
+    else:        
         #not one of the special cases
         if hashtype=='':
             die("Couldn't autodetect, please specify manually")
@@ -1199,7 +1382,24 @@ def main():
         #"normal" crack goes here
         if not show:
             print("Cracking hash type "+hashtype)
-        
+
+        #hashcat / oracle-s (11) fix-up
+        if hashtype=='112':
+            
+            ff = open(tmpfile,'w')
+            
+            #put colon in like [40]:[20] if not present
+            try: 
+                with open(infile,encoding='utf-8') as f:
+                    for i in f:
+                        if not re.search(i,':'): 
+                            ff.write(i[:-21]+':'+i[-21:])
+                            infile=tmpfile                
+            except:
+                print("Could not preprocess zip hash")
+                
+            ff.close()
+
         (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
         if maxinc is not None:
