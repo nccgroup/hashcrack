@@ -1018,7 +1018,7 @@ def main():
             
             stype = open(sname,'w')
             htype = open(hname,'w')
-            ttype = open(tname,'w')
+#            ttype = open(tname,'w')
 
  
             with open(infile,encoding='utf-8') as f:
@@ -1035,25 +1035,25 @@ def main():
                         if ans is not None:
                             ttype.write(ans+"\n")
                     
-                    m = re.search('H:([a-fA-f0-9]{32})', i)
-                    if m is not None:
-                        ans=m.group(1)                        
-                        if ans is not None:
-                            htype.write(ans[:-16]+':'+ans[-16:]+"\n")
+#                    m = re.search('H:([a-fA-f0-9]{32})', i)
+#                    if m is not None:
+#                        ans=m.group(1)                        
+#                        if ans is not None:
+#                            htype.write(ans[:-16]+':'+ans[-16:]+"\n")
                     
             stype.close()
             ttype.close()
-            htype.close()
+#            htype.close()
 
-            if is_non_zero_file(hname):
-                hashtype='3100'
+#            if is_non_zero_file(hname):
+#                hashtype='3100'
                 
-                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
+#                (dict,rules,inc)=selectparams( hashtype, nuke, ruleshome, dicthome )
 
-                if maxinc is not None:
-                    inc=maxinc
+#                if maxinc is not None:
+#                    inc=maxinc
             
-                runhc(hashcathome, hname, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, '', nuke, found, potfile, noinc, show, skip, restore, force, remove)
+#                runhc(hashcathome, hname, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, '', nuke, found, potfile, noinc, show, skip, restore, force, remove)
                 
             
             if is_non_zero_file(sname):
