@@ -3,6 +3,8 @@ unpacks some hash types, picks sensible options and invokes hashcat
 
 NVIDIA drivers here: http://www.nvidia.co.uk/Download/index.aspx?lang=en-uk
 
+alt email: jamie@blacktraffic.co.uk if you need support 
+
 # python version
 
 To install:
