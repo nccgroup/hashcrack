@@ -12,6 +12,8 @@
 # v 1.01 'Kill the Power'
 #
 # thanks to Woody for beta testing
+#
+# todo fix relative paths for crib file, among others? 
 
 import re
 import base64
@@ -640,7 +642,7 @@ def main():
     
     # for hashcat4
     #crackopts=" -O --quiet "
-    crackopts=" -O --bitmap-max=24 "
+    crackopts=" -O --bitmap-max=26 "
 
     uname=''
     loc=''
@@ -1065,7 +1067,7 @@ def main():
 
         # jks - invoke a subprocess to build the compatible file     
         if stype=='jks':
-            btexeccwd(javapath+' -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
+            btexec(javapath+' -jar JksPrivkPrepare.jar '+infile+' > '+tmpfile)
             
             hashtype='15500'
             
@@ -1090,6 +1092,20 @@ def main():
             print('RULES- '+rules)
             
             runjtr(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, sink , found, potfile, noinc, show, skip, restore, force, remove)
+
+        if stype=='ntlm-jtr':
+            #windows / linux switch
+            if pathsep=='/':
+                btexec('john/run/gpg2john '+infile+' > '+tmpfile)
+            else:
+                btexec('john\\run\\gpg2john.exe '+infile+' > '+tmpfile)
+                  
+            hashtype='ntlm-jtr'
+            (dict,rules,inc)=selectparams( hashtype, sink, ruleshome, dicthome )
+
+            print('RULES- '+rules)
+            
+            runjtr(hashcathome, tmpfile, hashtype, dict, rules, inc, trailer, dicthome, dictoverride, rightdict, rulesoverride, mask, lmask, rmask, dolast, ruleshome, words, pathsep, exe, crib, phrases, username, sink , found, potfile, noinc, show, skip, restore, force, remove)        
 
         if stype=='zip-jtr':
             #windows / linux switch
@@ -1408,3 +1424,9 @@ def main():
 if __name__== "__main__":
   main()
 
+##
+# mdxfind
+#
+# search for up to 10 iterations of sha1 ...
+#
+# mdxfind -h "^sha1$" -i 10 dict\cracked-passwords.txt < 40hex.txt
