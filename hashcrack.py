@@ -376,7 +376,7 @@ def runhc( hashcathome, pwdfile, hashtype, dict, rules, inc, trailer, dicthome, 
                     'includeInWordlist': '1',
                     'hashes': pccontents
                 },
-                verify=False #, proxies=proxies
+                verify=False, timeout=30 #, proxies=proxies
             )
 
             pcsubmit=1
